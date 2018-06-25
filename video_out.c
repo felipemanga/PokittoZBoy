@@ -15,7 +15,7 @@ void RefreshScreen_NoScale(int x1, int x2, int y1, int y2) {
     }
   }
   /* SDL_UpdateRect(screen, x1, y1, x2+1-x1, y2+1-y1); */ /* Draw whatever is in the buffer to the screen */
-  drv_refreshscreen();
+  // drv_refreshscreen();
 }
 
 
@@ -35,7 +35,7 @@ void RefreshScreen_BasicScale(int x1, int x2, int y1, int y2, int GraphicScaleFa
     }
   }
   /* Draw whatever is in the buffer to the screen */
-  drv_refreshscreen();
+  // drv_refreshscreen();
   /* SDL_UpdateRect(screen, x1 * GraphicScaleFactor, y1 * GraphicScaleFactor, (x2+1-x1) * GraphicScaleFactor, (y2+1-y1) * GraphicScaleFactor); */
 }
 
@@ -97,7 +97,7 @@ void RefreshScreen_Scale2x(int LcdModifiedFirstX, int LcdModifiedLastX, int LcdM
       }
     }
   }
-  /* Draw whatever is in the buffer to the screen */
+  /* Draw whatever is in the buffer to the screen * /
   drv_refreshscreen();
   /* SDL_UpdateRect(screen, LcdModifiedFirstX * GraphicScaleFactor, LcdModifiedFirstY * GraphicScaleFactor, (LcdModifiedLastX + 1 - LcdModifiedFirstX) * GraphicScaleFactor, (LcdModifiedLastY + 1 - LcdModifiedFirstY) * GraphicScaleFactor); */
 }
@@ -188,7 +188,7 @@ void RefreshScreen_Scale3x(int LcdModifiedFirstX, int LcdModifiedLastX, int LcdM
         }
       }
     }
-    /* Draw whatever is in the buffer to the screen */
+    /* Draw whatever is in the buffer to the screen * /
     drv_refreshscreen();
     /* SDL_UpdateRect(screen, LcdModifiedFirstX * GraphicScaleFactor, LcdModifiedFirstY * GraphicScaleFactor, (LcdModifiedLastX + 1 - LcdModifiedFirstX) * GraphicScaleFactor, (LcdModifiedLastY + 1 - LcdModifiedFirstY) * GraphicScaleFactor); */
 }
@@ -255,7 +255,7 @@ void RefreshScreen_Eagle(int LcdModifiedFirstX, int LcdModifiedLastX, int LcdMod
         }
       }
     }
-    /* Draw whatever is in the buffer to the screen */
+    /* Draw whatever is in the buffer to the screen * /
     drv_refreshscreen();
     /* SDL_UpdateRect(screen, LcdModifiedFirstX * GraphicScaleFactor, LcdModifiedFirstY * GraphicScaleFactor, (LcdModifiedLastX + 1 - LcdModifiedFirstX) * GraphicScaleFactor, (LcdModifiedLastY + 1 - LcdModifiedFirstY) * GraphicScaleFactor); */
 }
@@ -279,7 +279,7 @@ inline void RefreshScreen(int LcdModifiedFirstX, int LcdModifiedLastX, int LcdMo
     case REFRESHSCREEN_NOSCALE:
     default:
   */
-  RefreshScreen_NoScale(LcdModifiedFirstX, LcdModifiedLastX, LcdModifiedFirstY, LcdModifiedLastY);
+  // RefreshScreen_NoScale(LcdModifiedFirstX, LcdModifiedLastX, LcdModifiedFirstY, LcdModifiedLastY);
   //      break;
   // }
 }

@@ -49,14 +49,18 @@ inline uint8_t GetGbPalette(int PalAddr, uint8_t ColIdx) {
   return (IoRegisters[PalAddr] >> shifts[ColIdx]) & 3;
 }
 
-uint8_t *framebuffer;
+uint8_t framebuffer[160*4];
+uint32_t palette[4];
 
 inline void setPixel( uint32_t x, uint32_t y, uint32_t col ){
 
-  uint32_t i = y*(160>>2) + (x>>2);
+  framebuffer[x] = col;
+  /*
+  uint32_t i = x>>2; // y*(160>>2) + (x>>2);
   uint8_t column = x&0x03;
   uint32_t shift = 6 - (column << 1); // 0->6; 1->4; 2->2; 3->0
   framebuffer[i] = (framebuffer[i] & ~(3<<shift)) | (col<<shift);
+  */
   
   /*
   uint8_t pixel = framebuffer[i];
@@ -72,11 +76,15 @@ inline void setPixel( uint32_t x, uint32_t y, uint32_t col ){
 
 inline uint32_t getPixel( uint32_t x, uint32_t y ){
 
-  uint32_t i = y*(160>>2) + (x>>2);
+  return framebuffer[x];
+
+  /*
+  uint32_t i = x>>2; // y*(160>>2) + (x>>2);
   uint8_t column = x & 0x03;
   uint32_t shift = 6 - (column << 1); // 0->6; 1->4; 2->2; 3->0
   return (framebuffer[i]>>shift) & 3;
-
+  */
+  
   /*
   uint32_t i = y*(160>>2) + (x>>2);
   uint8_t pixel = framebuffer[i];
@@ -89,12 +97,12 @@ inline uint32_t getPixel( uint32_t x, uint32_t y ){
   
 }
 
-inline void DrawBackground(unsigned int CurScanline) {
+inline void DrawBackground( uint32_t CurScanline ) {
   static unsigned int TilesDataAddr, BgTilesMapAddr, TileNum, TileToDisplay, TileTempAddress, LastDisplayedTile;
   uint32_t x, y, z, t, u, PixelX, UbyteBuff1, UbyteBuff2;
   static uint8_t TileBuffer[64];
   if (((IoRegisters[0xFF40] & 1) == 0) || (HideBackgroundDisplay != 0)) { /* if "BackgroundEnabled" bit is not set, or bg has been forced OFF by user, then do not draw background (fill with black instead) */
-    for (x = 0; x < 160; x++) setPixel(x, CurScanline, 3);  /* black */
+    for (x = 0; x < 160; x++) setPixel(x, 0, 3);  /* black */
   } else {  /* If "BackgroundEnabled" bit is set then draw background */
     /* Get starting address of tiles data */
     if ((IoRegisters[0xFF40] & 16) == 0) {
@@ -107,7 +115,7 @@ inline void DrawBackground(unsigned int CurScanline) {
     } else {
       BgTilesMapAddr = 0x9C00;
     }
-    y = (CurScanline + IoRegisters[0xFF42]);
+    y = CurScanline + IoRegisters[0xFF42];
     z = (y & 7);   /* Same than z = y MOD 8 (but MUCH faster)    --> this is the tile's row that has to be computed */
     u = (z << 3);  /* << 3 = *8 */
     y >>= 3;  /* Same than y = y/8 (but >> is faster)            --> this is the number of the tile to display */
@@ -180,14 +188,14 @@ inline void DrawBackground(unsigned int CurScanline) {
 	  t = u;
 	  switch( 160 - PixelX ){
 	  default:
-	  case 8:  setPixel( PixelX++, CurScanline, TileBuffer[u++] );
-	  case 7:  setPixel( PixelX++, CurScanline, TileBuffer[u++] );
-	  case 6:  setPixel( PixelX++, CurScanline, TileBuffer[u++] );
-	  case 5:  setPixel( PixelX++, CurScanline, TileBuffer[u++] );
-	  case 4:  setPixel( PixelX++, CurScanline, TileBuffer[u++] );
-	  case 3:  setPixel( PixelX++, CurScanline, TileBuffer[u++] );
-	  case 2:  setPixel( PixelX++, CurScanline, TileBuffer[u++] );
-	  case 1:  setPixel( PixelX++, CurScanline, TileBuffer[u++] );
+	  case 8:  setPixel( PixelX++, 0, TileBuffer[u++] );
+	  case 7:  setPixel( PixelX++, 0, TileBuffer[u++] );
+	  case 6:  setPixel( PixelX++, 0, TileBuffer[u++] );
+	  case 5:  setPixel( PixelX++, 0, TileBuffer[u++] );
+	  case 4:  setPixel( PixelX++, 0, TileBuffer[u++] );
+	  case 3:  setPixel( PixelX++, 0, TileBuffer[u++] );
+	  case 2:  setPixel( PixelX++, 0, TileBuffer[u++] );
+	  case 1:  setPixel( PixelX++, 0, TileBuffer[u++] );
 	  case 0:
 	    break;
 	  }
@@ -200,7 +208,7 @@ inline void DrawBackground(unsigned int CurScanline) {
 }
 
 
-inline void DrawWindow(unsigned int CurScanline) {
+inline void DrawWindow( uint32_t CurScanline ) {
   /*
    Some infos about the window...
 
@@ -273,7 +281,7 @@ inline void DrawWindow(unsigned int CurScanline) {
           for (t = 0; t < 8; t++) {
             if ((PixelX >= 0) && (PixelX < 160)) {
               /*ScreenBuffer(PixelX, CurScanline) = GbPalette(TileBufferWin(z), 0) */
-              setPixel(PixelX,CurScanline, TileBufferWin[z]); // | 32; /* | 32 is for marking it as 'window' (for possible colorization) */
+              setPixel(PixelX,0, TileBufferWin[z]); // | 32; /* | 32 is for marking it as 'window' (for possible colorization) */
             }
             PixelX++;  /* add 1 instead of relying on t value (faster) */
             z++;
@@ -286,15 +294,15 @@ inline void DrawWindow(unsigned int CurScanline) {
 }
 
 
-void DrawSprites(int CurScanline) {
+void DrawSprites( uint32_t CurScanline ) {
   /* Sprites should be displayed in some specific order (aka "sprite priority"):
      When sprites with different x coordinate values overlap, the one with the smaller
      x coordinate (closer to the left) will have priority and appear above any others.
      When sprites with the same x coordinate values overlap, they have priority according
      to table ordering. (i.e. $FE00 - highest, $FE04 - next highest, etc.) */
-  static int PatternNum, SpriteFlags, UbyteBuff1, UbyteBuff2, SpritePalette, x, y, z, t, xx;
-  static int SpritePosX, SpritePosY, SpriteMaxY;
-  static int NumberOfSpritesToDisplay;
+  int PatternNum, SpriteFlags, UbyteBuff1, UbyteBuff2, SpritePalette, x, y, z, t, xx;
+  int SpritePosX, SpritePosY, SpriteMaxY;
+  int NumberOfSpritesToDisplay;
   static uint8_t SpriteBuff[128];   /* big enough for 8x8 and 8x16 sprites */
   static int ListOfSpritesToDisplay[40];
   /*SpriteFlags = 0 */
@@ -395,12 +403,12 @@ void DrawSprites(int CurScanline) {
               if (((SpritePosX + t) >= 0) && ((SpritePosY + z) >= 0) && ((SpritePosX + t) < 160) && ((SpritePosY + z) < 144)) { /* don't try to write outside the screen */
                 if (SpriteBuff[(z << 3) | t] > 0) {  /* color 0 is transparent on sprites */
                   /* If bit 7 of the sprite's flags is set, then the sprite is "hidden" (prevails only over color 0 of background) */
-                  if (((SpriteFlags & bx10000000) == 0) || getPixel(SpritePosX + t,SpritePosY + z) == UbyteBuff1) { /* Sprite's priority over background */
+                  if (((SpriteFlags & bx10000000) == 0) || getPixel(SpritePosX + t, 0) == UbyteBuff1) { /* Sprite's priority over background */
                     /*ScreenBuffer(SpritePosX + t, SpritePosY + z) = GbPalette(SpriteBuff((z << 3) + t), SpritePalette) */
                     if (SpritePalette == 1) { /* OBJ0 */
-		      setPixel(SpritePosX + t,SpritePosY + z, GetGbPalette(pal_OBP0, SpriteBuff[(z << 3) | t]));// | 64; /* | 64 is for marking it as 'OBJ0' (for possible later colorization */
+		      setPixel(SpritePosX + t, 0, GetGbPalette(pal_OBP0, SpriteBuff[(z << 3) | t]));// | 64; /* | 64 is for marking it as 'OBJ0' (for possible later colorization */
                       } else { /* OBJ1 */
-		      setPixel(SpritePosX + t,SpritePosY + z, GetGbPalette(pal_OBP1, SpriteBuff[(z << 3) | t]));// | 128; /* | 128 is for marking it as 'OBJ1' (for possible later colorization */
+		      setPixel(SpritePosX + t, 0, GetGbPalette(pal_OBP1, SpriteBuff[(z << 3) | t]));// | 128; /* | 128 is for marking it as 'OBJ1' (for possible later colorization */
                     }
                   }
                 }
@@ -467,6 +475,37 @@ static inline void SetLcdMode(uint8_t x) {
 
 #define DIV456( A ) (A) * (0x1000000 / 456) >> 24
 
+void FlushScanline(){
+  volatile uint32_t *LCD = (uint32_t *) 0xA0002188;
+  volatile uint32_t *SET = (uint32_t *) 0xA0002284;
+  volatile uint32_t *CLR = (uint32_t *) 0xA0002204;
+  
+  uint8_t *d = framebuffer;
+  uint32_t x;
+  for(x=0;x<160;x+=16){
+      
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    
+  }
+  
+}
+
 static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams) {
   // static int x1, x2, y1, y2, x, y;
   static unsigned int LastFullframeRenderingTime = 0;
@@ -508,45 +547,8 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
           TurnLcdOff();
           /*UserMessage = "LCD IS OFF" */
         }
-        /* There is some stuff to check once per second - let's see if the time has come */
-        if ((drv_getticks() - OneSecondPollingTimer) >= 1000) {
-          OneSecondPollingTimer = drv_getticks();
-          if (zboyparams->ShowFPS != 0) {
-            CountFPS = 0;
-          }
-          if (AutoScreenshot != 0) { /* Ask for a screenshot if autoscreenshot is ON, and last one was 10s ago */
-            if ((OneSecondPollingTimer - LastScreenshotTime) >= 10000) AskForScreenshot = 1;
-          }
-        }
-        /* Do a screenshot if the user wanted one * /
-        if (AskForScreenshot != 0) {
-          char snapshotfile[1024];
-          getsnapshotfilename(snapshotfile);
-          SavePcxFile(snapshotfile);
-          AskForScreenshot = 0;
-          LastScreenshotTime = drv_getticks();
-          SetUserMsg("SCREENSHOT DONE");
-        }
-        /* Print user messages onscreen, if any * /
-        if (UserMessageFramesLeft > 0) {
-          UserMessageFramesLeft -= 1;
-          // PrintMsg(UserMessage, 1); /* Draw the user message, if any * /
-        }
-	*/
         // if (zboyparams->NoSpeedLimit == 0) AdjustTiming(zboyparams); /* Slow down CPU emulation before drawing graphic frame */
-        fpslimitGenFrameTrigger += zboyparams->fpslimit;
-        if (fpslimitGenFrameTrigger >= 60) { /* check out if SkipFrame allows to draw the frame */
-          fpslimitGenFrameTrigger -= 60;
-          // DetectScreenChanges();
-          if (LastFullframeRenderingTime > 1) { /* Redraw a full frame every 90 frames (my SDL looses screen content when minimized/maximized..) */
-              RefreshScreen(0, 159, 0, 143, zboyparams);
-              LastFullframeRenderingTime = 0;
-	      //  } else {
-              // if (x1 != 255) RefreshScreen(x1, x2, y1, y2, zboyparams);  /* Refresh the (real) screen, if it have changed at all */
-	  }
-	  LastFullframeRenderingTime++;
-          CountFPS++;
-        }
+	
       }
     } else {   /* Outside the VBlank, perform the MODE 0-2-3 loop */
       VideoClkCounterMode += cycles;
@@ -567,11 +569,16 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
       } else {     /* mode 0 (H-blank) */
           if (GetLcdMode() != 0) {   /* Check if not already in mode 0 */
             if ((IoRegisters[0xFF40] & bx10000000) > 0) {   /* If LCD is ON... */
-              if (LastLYdraw != CurLY) {                    /* And curline hasn't been drawn yet... */
+              if (LastLYdraw != CurLY) {                    /* And curline hasn't been drawn yet... */		
                 LastLYdraw = CurLY;
                 DrawBackground(CurLY);                      /* Generate current scanline */
                 DrawWindow(CurLY);
                 DrawSprites(CurLY);
+
+		if( LastLYdraw != CurLY -1 )
+		  drv_setscanline(CurLY);
+		
+		FlushScanline();
               }
             }
             /* Trigger the hblank interrupt if enabled via bit 3 of the stat register (FF41) (via LCDC int?) */

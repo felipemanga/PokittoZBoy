@@ -73,20 +73,10 @@ inline void PushToStack(uint8_t TmpRegister1, uint8_t TmpRegister2) {    /* Push
 }
 
 inline void PopFromStack(uint8_t *popreg1, uint8_t *popreg2) {    /* Pop a register pair from the stack */
-  if (Register.SP < 0xFFFE) {
-      *popreg2 = MemoryRead(Register.SP);
-      Register.SP++;
-      *popreg1 = MemoryRead(Register.SP);
-      Register.SP++;
-    } else {
-      #ifdef DEBUGMODE
-        DebugOnScreen();
-        DebugShowCpuRegisters();
-      #endif
-      PrintMsg("FATAL ERROR: STACK OVERFLOW!", 0);
-      PressAnyKey();
-      exit(2);
-  }
+  *popreg2 = MemoryRead(Register.SP);
+  Register.SP++;
+  *popreg1 = MemoryRead(Register.SP);
+  Register.SP++;
 }
 
 inline void IncReg8(uint8_t *RegToInc) {
@@ -106,7 +96,7 @@ inline void IncReg8(uint8_t *RegToInc) {
 }
 
 inline void DecReg8(uint8_t *RegToInc) { /* Decrements by 1 an 8bit register */
-  static uint8_t OldRegToInc;
+  uint8_t OldRegToInc;
   OldRegToInc = *RegToInc;
   SetFlagN();
   if (*RegToInc == 0) {

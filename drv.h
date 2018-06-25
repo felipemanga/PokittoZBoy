@@ -155,7 +155,7 @@ void drv_delay(int ms);
 void drv_putpixel(int x, int y, int color);
 
 /* renders the screen from the memory buffer into the actual screen */
-void drv_refreshscreen(void);
+// void drv_refreshscreen(void);
 
 /* deinitialize the I/O subsystem. this is called just before zBoy quits */
 int drv_close(void);
@@ -165,5 +165,7 @@ int drv_close(void);
  * string containing the save directory. maxlen is the number of bytes
  * available in *dir */
 void drv_getsavedir(char *dir, int maxlen);
+
+void drv_setscanline(uint32_t CurLY);
 
 #endif
