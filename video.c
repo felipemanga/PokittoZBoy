@@ -510,6 +510,7 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
   // static int x1, x2, y1, y2, x, y;
   static unsigned int LastFullframeRenderingTime = 0;
   static uint32_t OneSecondPollingTimer = 0;
+  static uint32_t frameskip = 0;
 
   VideoClkCounterVBlank += cycles;
   if (VideoClkCounterVBlank >= 70224) {
@@ -543,6 +544,12 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
       if (GetLcdMode() != bx00000001) {   /* Check if not already in mode 1 */
         SetLcdMode(1);   /* Here I set LCD mode 1 */
         INT(INT_VBLANK);   /* Ask for the VBLANK interrupt */
+
+	if( !frameskip )
+	  frameskip = 2;
+	else
+	  frameskip--;
+	
         if ((IoRegisters[0xFF40] & bx10000000) == 0) {   /* The LCD is off, make it all black */
           TurnLcdOff();
           /*UserMessage = "LCD IS OFF" */
@@ -571,6 +578,8 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
             if ((IoRegisters[0xFF40] & bx10000000) > 0) {   /* If LCD is ON... */
               if (LastLYdraw != CurLY) {                    /* And curline hasn't been drawn yet... */		
                 LastLYdraw = CurLY;
+		if( !frameskip ){
+		  
                 DrawBackground(CurLY);                      /* Generate current scanline */
                 DrawWindow(CurLY);
                 DrawSprites(CurLY);
@@ -579,6 +588,9 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
 		  drv_setscanline(CurLY);
 		
 		FlushScanline();
+
+		}
+		
               }
             }
             /* Trigger the hblank interrupt if enabled via bit 3 of the stat register (FF41) (via LCDC int?) */

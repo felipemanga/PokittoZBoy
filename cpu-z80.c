@@ -91,7 +91,8 @@ inline void CheckInterrupts(void) {
   if (IrqTempState == 0) return; /* No interrupt to handle */
   if (HaltState == 1) {
     HaltState = 0;   /* If the CPU was HALTed, resume it, but DON'T touch interrupts if the CPU is in DI state! */
-    Register.PC++;
+    if( !HaltBug )
+      Register.PC++;
     if (InterruptsState == 0) return; /* If interrupts are disabled, quit here. We don't want to handle them if they are off, just resume the HALT */
   }
   PushToStack16(Register.PC);            /* Save current address */
