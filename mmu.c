@@ -31,23 +31,17 @@ uint8_t * const IoRegisters = _IoRegisters - 0xFF00;   /* All I/O memory-mapped 
 
 
 // uint8_t MemoryMAP[0x10000];    /* Regular memory (fallback for unmapped regions) */
-int Mbc1Model = MBC1_16_8;    /* MBC1 memory model (MbcModel can be 1 or 2)  1=16/8 ; 2=4/32 */
+int Mbc1Model = MBC1_4_32; // MBC1_16_8;    /* MBC1 memory model (MbcModel can be 1 or 2)  1=16/8 ; 2=4/32 */
 int CurRomBank = 0;           /* Used for ROM bank switching (must be at least 9 bits long for MBC5 support!) */
 int CurRamBank = 0;           /* Current RAM bank selection */
 // int SaveScoresWriteProtection[2048];
 
-#include "mbc0.c"  /* Support for ROM-ONLY ROMs */
-
-//#include "mbc1.c"  /* Support for MBC1 memory controllers */
-//#include "mbc2.c"  /* Support for MBC2 memory controllers */
-//#include "mbc3.c"  /* Support for MBC3 memory controllers (without TIMER support so far) */
-//#include "mbc5.c"  /* Support for MBC5 memory controllers (usually found in GBC games) */
 
 // uint8_t (*MemoryReadSpecial)(register int memaddr);
 // void (*MemoryWriteSpecial)(register int memaddr, uint8_t DataByte);
 
-#define MemoryWriteSpecial MBC0_MemoryWrite
-#define MemoryReadSpecial MBC0_MemoryRead
+// #define MemoryWriteSpecial MBC0_MemoryWrite
+// #define MemoryReadSpecial MBC0_MemoryRead
 
 
 
@@ -80,52 +74,41 @@ uint8_t * const RAMette[] = {
   _MemoryInternalRAM - 0xC000 - 8192,
   _SpriteOAM - 0xFE00,
   _IoRegisters - 0xFF00,
-  _MemoryInternalHiRAM - 0xFF80
+  _MemoryInternalHiRAM - 0xFF80,
+  MemoryROM+0x4000,
+  MemoryROM+0x8000
 };
 
-void indexRAM(){
-  int i=0;
-  for(; i<0x8000>>5; i++ )
-    ramidx[i] = 0;
-  for(; i<0xA000>>5; i++ )
-    ramidx[i] = 1;  
-  for(; i<0xE000>>5; i++ )
-    ramidx[i] = 2;
-  for(; i<0xFE00>>5; i++ )
-    ramidx[i] = 3;
-  for(; i<0xFEA0>>5; i++ )
-    ramidx[i] = 4;
-  for(; i<0xFF80>>5; i++ )
-    ramidx[i] = 5;
-  for(; i<0x10000>>5; i++ )
-    ramidx[i] = 6;  
-}
-
-inline uint8_t MemoryRead(int ReadAddr) {
-  return RAMette[ ramidx[ReadAddr>>5] ][ ReadAddr ];
-  //   PrintDebug("MemoryRead 0x%04X\n", ReadAddr);
-  //   if (ReadAddr < 0x4000) {                                     /* ROM bank #0 */
-    //     return(MemoryROM[ReadAddr]);
-    //   } else if ( ReadAddr < 0xE000 ) {    /* Internal 8KiB RAM */
-    //     return(MemoryInternalRAM[ReadAddr]);
-    //   } else if ( ReadAddr < 0xFE00 ) {    /* RAM mirror */
-    //     return(MemoryInternalRAM[ReadAddr - 8192]);
-    //   } else if ( ReadAddr < 0xFEA0 ) {    /* Sprite OAM memory */
-    //     return(SpriteOAM[ReadAddr]);
-    //   } else if ((ReadAddr >= 0xFF80) && (ReadAddr <= 0xFFFF)) {   /* Hi RAM area */
-    //     return (MemoryInternalHiRAM[ReadAddr]);
-    //   } else if ((ReadAddr >= 0xFF00) && (ReadAddr <= 0xFF4B)) {   /* I/O registers */
-    //     return(IoRegisters[ReadAddr]);
-    //   } else if ((ReadAddr >= 0x8000) && (ReadAddr < 0xA000)) {    /* Video RAM (8KiB) */
-    //     return(VideoRAM[ReadAddr]);
-    //   } else {
-    //     return 0;
-    //   }
-}
 
 uint8_t JoyRegA = 0, JoyRegB = 0, JoyOldReg;
 
-void IOWrite(uint8_t JoyNewReg){
+uint8_t MemoryRead( int );
+
+inline void IOWrite(uint32_t WriteAddr, uint8_t DataHolder){
+
+  if (WriteAddr == 0xFF41) {                            /* STAT register: Do not allow to write into 2 last bits of the STAT */
+    IoRegisters[0xFF41] = ((IoRegisters[0xFF41] & bx00000011) | (DataHolder & bx11111100)); /* register, as these bits are the mode flag. */
+  } else if (WriteAddr == 0xFF44) { /* CURLINE [RW] Current Scanline. */
+    IoRegisters[WriteAddr] = 0;     /* Writing into this register resets it. */
+    /* SetUserMsg("LY RESET"); */
+  } else if (WriteAddr == 0xFF46) {   /* Starts LCD OAM DMA transfer */
+      int x;
+      for( x = 0; x < 160; x++) { /* Let's copy XX00-XX9F to FE00-FE9F */
+	SpriteOAM[0xFE00 | x] = MemoryRead((DataHolder << 8) | x);
+      }
+  } else if (WriteAddr == 0xFF04) {
+    IoRegisters[0xFF04] = 0;      /* Divide register: Writing any value sets it to 0 */
+  } else if (WriteAddr == 0xFF00) {
+    JoypadWrite( DataHolder );
+  } else { // if ((WriteAddr >= 0xFF00) && (WriteAddr <= 0xFF4B)) {   /* I/O registers */
+    IoRegisters[WriteAddr] = DataHolder;
+    //} else if (WriteAddr <= 65535) {
+    // MemoryWriteSpecial(WriteAddr, DataHolder);
+  }
+  
+}
+
+void JoypadWrite(uint8_t JoyNewReg){
   if( (JoyNewReg & bx00100000) != 0) {
     JoyNewReg &= 0xF0;
     /* P14 selected (bit 4 is low) -> down/up/left/right */
@@ -142,48 +125,13 @@ void IOWrite(uint8_t JoyNewReg){
   IoRegisters[0xFF00] = JoyNewReg;   /* update the joypad register [FF00h] */
 }
 
-inline void MemoryWrite(uint32_t WriteAddr, uint8_t DataHolder) {
-  PrintDebug("MemoryWrite 0x%04X [%02Xh]\n", WriteAddr, DataHolder);
 
-  uint8_t *bank = RAMette[ ramidx[WriteAddr>>5] ];
-  if( bank != IoRegisters ){
-    bank += WriteAddr;
-    if( ((uint32_t) bank) > 0x10000000 ){
-      *bank = DataHolder;
-    }
-    return;
-  }
+#ifdef MBC0
+#include "mbc0.c"  /* Support for ROM-ONLY ROMs */
+#elif defined(MBC1)
+#include "mbc1.c"  /* Support for MBC1 memory controllers */
+#endif
 
-  
-  // if ((WriteAddr >= 0xC000) && (WriteAddr < 0xE000)) {    /* Internal 8KiB RAM */
-    //   MemoryInternalRAM[WriteAddr] = DataHolder;
-    // } else if ((WriteAddr >= 0xE000) && (WriteAddr < 0xFE00)) {    /* RAM mirror */
-    //   MemoryInternalRAM[WriteAddr - 8192] = DataHolder;
-    // } else if ((WriteAddr >= 0xFE00) && (WriteAddr < 0xFEA0)) {    /* Sprite OAM memory */
-    //   SpriteOAM[WriteAddr] = DataHolder;
-    // } else if ((WriteAddr >= 0xFF80) && (WriteAddr <= 0xFFFF)) {   /* Hi RAM area */
-    //   MemoryInternalHiRAM[WriteAddr] = DataHolder;
-    // } else if ((WriteAddr >= 0x8000) && (WriteAddr < 0xA000)) {   /* Video RAM (8KiB) */
-    //   VideoRAM[WriteAddr] = DataHolder;
-    // } else
-
-  if (WriteAddr == 0xFF41) {                            /* STAT register: Do not allow to write into 2 last bits of the STAT */
-    IoRegisters[0xFF41] = ((IoRegisters[0xFF41] & bx00000011) | (DataHolder & bx11111100)); /* register, as these bits are the mode flag. */
-  } else if (WriteAddr == 0xFF44) { /* CURLINE [RW] Current Scanline. */
-    IoRegisters[WriteAddr] = 0;     /* Writing into this register resets it. */
-    /* SetUserMsg("LY RESET"); */
-  } else if (WriteAddr == 0xFF46) {   /* Starts LCD OAM DMA transfer */
-      int x;
-      for( x = 0; x < 160; x++) { /* Let's copy XX00-XX9F to FE00-FE9F */
-	SpriteOAM[0xFE00 | x] = MemoryRead((DataHolder << 8) | x);
-      }
-  } else if (WriteAddr == 0xFF04) {
-    IoRegisters[0xFF04] = 0;      /* Divide register: Writing any value sets it to 0 */
-  } else if (WriteAddr == 0xFF00) {
-    IOWrite( DataHolder );
-  } else if ((WriteAddr >= 0xFF00) && (WriteAddr <= 0xFF4B)) {   /* I/O registers */
-    IoRegisters[WriteAddr] = DataHolder;
-    //} else if (WriteAddr <= 65535) {
-    // MemoryWriteSpecial(WriteAddr, DataHolder);
-  }
-}
+//#include "mbc2.c"  /* Support for MBC2 memory controllers */
+//#include "mbc3.c"  /* Support for MBC3 memory controllers (without TIMER support so far) */
+//#include "mbc5.c"  /* Support for MBC5 memory controllers (usually found in GBC games) */

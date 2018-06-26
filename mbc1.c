@@ -28,6 +28,143 @@
    Note: The content of the MBC1 RAM can be saved during poweroff if the cartridge comes with a battery.
 */
 
+void indexRAM(){
+  int i=0;
+  for(; i<0x8000>>5; i++ )
+    ramidx[i] = 0;
+  for(; i<0xA000>>5; i++ )
+    ramidx[i] = 1;  
+  for(; i<0xE000>>5; i++ )
+    ramidx[i] = 2;
+  for(; i<0xFE00>>5; i++ )
+    ramidx[i] = 3;
+  for(; i<0xFEA0>>5; i++ )
+    ramidx[i] = 4;
+  for(; i<0xFF80>>5; i++ )
+    ramidx[i] = 5;
+  for(; i<0x10000>>5; i++ )
+    ramidx[i] = 6;  
+}
+
+void setBank( int b ){
+  if( b > 1 )
+    b += 6;
+  
+  int i=0x4000>>5;
+  for(; i<0x8000>>5; i++ )
+    ramidx[i] = b;
+}
+
+inline uint8_t MemoryRead(int ReadAddr) {
+  return RAMette[ ramidx[ReadAddr>>5] ][ ReadAddr ];
+  //   PrintDebug("MemoryRead 0x%04X\n", ReadAddr);
+  //   if (ReadAddr < 0x4000) {                                     /* ROM bank #0 */
+    //     return(MemoryROM[ReadAddr]);
+    //   } else if ( ReadAddr < 0xE000 ) {    /* Internal 8KiB RAM */
+    //     return(MemoryInternalRAM[ReadAddr]);
+    //   } else if ( ReadAddr < 0xFE00 ) {    /* RAM mirror */
+    //     return(MemoryInternalRAM[ReadAddr - 8192]);
+    //   } else if ( ReadAddr < 0xFEA0 ) {    /* Sprite OAM memory */
+    //     return(SpriteOAM[ReadAddr]);
+    //   } else if ((ReadAddr >= 0xFF80) && (ReadAddr <= 0xFFFF)) {   /* Hi RAM area */
+    //     return (MemoryInternalHiRAM[ReadAddr]);
+    //   } else if ((ReadAddr >= 0xFF00) && (ReadAddr <= 0xFF4B)) {   /* I/O registers */
+    //     return(IoRegisters[ReadAddr]);
+    //   } else if ((ReadAddr >= 0x8000) && (ReadAddr < 0xA000)) {    /* Video RAM (8KiB) */
+    //     return(VideoRAM[ReadAddr]);
+    //   } else {
+    //     return 0;
+    //   }
+}
+
+
+void MBC1Write( uint32_t memaddr, uint8_t DataByte ){
+  uint32_t OldRomBank = CurRomBank;
+  
+  if ((memaddr >= 0x2000) && (memaddr < 0x4000)) {
+    /* Select current ROM or RAM bank on MBC1 */
+    /* TODO checklist #784632 */
+    if (Mbc1Model == MBC1_16_8) {  /* Mode 16/8 */
+      CurRomBank &= bx01100000;
+      CurRomBank |= (DataByte & bx00011111);
+    } else {  /* Mode 4/32 */
+      CurRomBank = (DataByte & bx00011111);
+    }
+    if (CurRomBank == 0x00) CurRomBank = 0x01;  /* Should I do that? Not super sure... */
+    if (CurRomBank == 0x20) CurRomBank = 0x21;  /* Should I do that? Not super sure... */
+    if (CurRomBank == 0x40) CurRomBank = 0x41;  /* Should I do that? Not super sure... */
+    if (CurRomBank == 0x60) CurRomBank = 0x61;  /* Should I do that? Not super sure... */
+    PrintDebug("switched ROM bank to %d\n", CurRomBank);
+    
+  } else if ((memaddr >= 0x4000) && (memaddr < 0x6000)) {
+    
+    if (Mbc1Model == MBC1_16_8) {
+
+      // For mode 16/8, 5 bits is not enough to address all
+      // 128 banks (each bank is 16KiB big). Write a
+      // byte into 4000-5FFF. The 2 least significant bits
+      // of this byte (xxxxxxBB) will be used as the two most
+      // significant bits of the ROM address.
+      CurRomBank &= bx00011111;
+      CurRomBank |= ((DataByte << 5) & bx01100000);
+
+      if (CurRomBank == 0x00) CurRomBank = 0x01;  /* Should I do that? Not super sure... */
+      if (CurRomBank == 0x20) CurRomBank = 0x21;  /* Should I do that? Not super sure... */
+      if (CurRomBank == 0x40) CurRomBank = 0x41;  /* Should I do that? Not super sure... */
+      if (CurRomBank == 0x60) CurRomBank = 0x61;  /* Should I do that? Not super sure... */
+      PrintDebug("switched ROM bank to %d\n", CurRomBank);
+      
+    } else {   /* For mode 4/32, you need to select the RAM bank to be used (at A000-C000). to do that, write a */
+      CurRamBank = (DataByte & bx00000011);    /* byte into 4000-5FFF. The 2 least significant bits of this */
+    }                                            /* byte (xxxxxxBB) are telling what RAM bank to use. */
+  } else if ((memaddr >= 0x6000) && (memaddr < 0x8000)) {   /* Configuration for the MBC1 chip (selection of mem model) */
+    if ((DataByte & bx00000001) == 0) {
+      Mbc1Model = MBC1_16_8;   /* 16/8 model */
+      /* SetUserMsg("MBC 16/8"); */
+      PrintDebug("switched MBC1 mode to 16/8\n");
+    } else {
+      Mbc1Model = MBC1_4_32;   /* 4/32 model */
+      /* SetUserMsg("MBC 4/32"); */
+      PrintDebug("switched MBC1 mode to 4/32\n");
+    }
+  }
+
+  if( OldRomBank != CurRomBank ){
+    setBank( CurRomBank );
+  }
+
+}
+
+inline void MemoryWrite(uint32_t WriteAddr, uint8_t DataHolder) {
+  PrintDebug("MemoryWrite 0x%04X [%02Xh]\n", WriteAddr, DataHolder);
+
+  uint8_t *bank = RAMette[ ramidx[WriteAddr>>5] ];
+  if( bank != IoRegisters ){
+    bank += WriteAddr;
+    if( ((uint32_t) bank) > 0x10000000 ){
+      *bank = DataHolder;
+    }else{
+      MBC1Write( WriteAddr, DataHolder );
+    }
+    return;
+  }
+  IOWrite( WriteAddr, DataHolder );
+
+  
+  // if ((WriteAddr >= 0xC000) && (WriteAddr < 0xE000)) {    /* Internal 8KiB RAM */
+    //   MemoryInternalRAM[WriteAddr] = DataHolder;
+    // } else if ((WriteAddr >= 0xE000) && (WriteAddr < 0xFE00)) {    /* RAM mirror */
+    //   MemoryInternalRAM[WriteAddr - 8192] = DataHolder;
+    // } else if ((WriteAddr >= 0xFE00) && (WriteAddr < 0xFEA0)) {    /* Sprite OAM memory */
+    //   SpriteOAM[WriteAddr] = DataHolder;
+    // } else if ((WriteAddr >= 0xFF80) && (WriteAddr <= 0xFFFF)) {   /* Hi RAM area */
+    //   MemoryInternalHiRAM[WriteAddr] = DataHolder;
+    // } else if ((WriteAddr >= 0x8000) && (WriteAddr < 0xA000)) {   /* Video RAM (8KiB) */
+    //   VideoRAM[WriteAddr] = DataHolder;
+    // } else
+
+}
+
 
 uint8_t MBC1_MemoryRead(int memaddr) {
   if ((memaddr >= 0xA000) && (memaddr < 0xC000)) {        /* RAM bank n */
@@ -63,7 +200,7 @@ uint8_t MBC1_MemoryRead(int memaddr) {
     /*PRINT "MMU fatal error: Tried to read from an unknown memory address: " & HEX(memaddr) & "h" */
     /*SLEEP */
     /*QuitEmulator = 1 */
-    return(MemoryMAP[memaddr]);
+    // return(MemoryMAP[memaddr]);
   }
 }
 
@@ -123,6 +260,6 @@ void MBC1_MemoryWrite(int memaddr, uint8_t DataByte) {
   } else {                                                   /* Else it's something I don't know about */
     /*PRINT "MMU fatal error: Tried to write to an unknown memory address: "; HEX(memaddr) */
     /*QuitEmulator = 1 */
-    MemoryMAP[memaddr] = DataByte;
+    // MemoryMAP[memaddr] = DataByte;
   }
 }

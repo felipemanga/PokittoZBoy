@@ -377,6 +377,6 @@ inline void CheckJoypad(int cycles, struct zboyparamstype *zboyparams) {
   //  if (KeyState.B != 0) JoyNewReg &= bx11111110; /* if ALT -> Set P10 */
 
   // if (JoyOldReg != JoyNewReg) JoyOldReg = JoyNewReg; /* If a key has been pressed/released update the JoyOldReg variable */
-  IOWrite( IoRegisters[0xFF00] );
+  JoypadWrite( IoRegisters[0xFF00] );
   
 }
