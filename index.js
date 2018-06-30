@@ -24,7 +24,7 @@ function dropFile( event ){
 	fetch('mbc0.bin')
 	    .then( rsp => rsp.arrayBuffer() )
 	    .then( ab =>{
-		mbc0 = ab;
+		mbc0 = new Uint8Array(ab);
 		load();
 	    });
     }else{
@@ -35,19 +35,45 @@ function dropFile( event ){
 	for (var i = 0; i < files.length; i++) {
 	    let file = files[i];
 	    let fr = new FileReader();
-	    fr.onload = evt => process( new Uint8Array(fr.result), file.name );
+	    fr.onload = evt => process( new Uint8Array(fr.result), file.name.replace(/\.[a-z]+$/i, '') );
 	    fr.readAsArrayBuffer( file );	
 	}
     }
 
     function process( ROM, name ){
+
+	if( ROM[0x147] ){
+	    log( name + " bad mapper: " + ROM[0x147] );
+	    return;
+	}
+
+	if( ROM.length >= 0x10000 ){
+	    log( name + " too big!" );
+	    return;		 
+	}
+	
+	let bin = new Uint8Array( mbc0.length );
+	bin.set( mbc0 );
+	bin.set( ROM, 0x122cc );
+	
+	let url = URL.createObjectURL( new Blob([bin.buffer], {type:'application/bin'}) );
+	let a = document.createElement('A');
+	a.href = url;
+	a.textContent = name;
+	a.setAttribute("download", name + ".bin");
+	log( a );
+	
+    }
+
+    function log( msg ){
 	let out = document.getElementById("out");
 	let li = document.createElement("li");
 	out.appendChild(li);
-	let a = document.createElement("a");
-	li.appendChild(a);
-	a.textContent = name.replace(/\.[a-z]$/i, '') + ROM[0x147];
-	
+	if( typeof msg == "string" ){
+	    li.textContent = msg;
+	}else{
+	    li.appendChild( msg );
+	}
     }
 
     
