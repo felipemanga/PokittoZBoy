@@ -1,0 +1,13 @@
+document.addEventListener("DOMContentLoaded", function(){
+    document.body.addEventListener("dragenter", cancelEvent);
+    document.body.addEventListener("dragover", cancelEvent);
+    document.body.addEventListener("drop", dropFile);
+});
+
+function cancelEvent( event ){
+    event.stopPropagation();
+    event.preventDefault();
+}
+
+function dropFile( event ){
+}
