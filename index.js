@@ -35,18 +35,18 @@ function dropFile( event ){
 	for (var i = 0; i < files.length; i++) {
 	    let file = files[i];
 	    let fr = new FileReader();
-	    fr.onload = evt => process( fr.result, file.name );
+	    fr.onload = evt => process( new Uint8Array(fr.result), file.name );
 	    fr.readAsArrayBuffer( file );	
 	}
     }
 
     function process( ROM, name ){
-
+	let out = document.getElementById("out");
 	let li = document.createElement("li");
 	out.appendChild(li);
 	let a = document.createElement("a");
 	li.appendChild(a);
-	a.textContent = name.replace(/\.[a-z]$/i, '');
+	a.textContent = name.replace(/\.[a-z]$/i, '') + ROM[0x147];
 	
     }
 
