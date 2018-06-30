@@ -21,7 +21,7 @@ function dropFile( event ){
     var pending = 0;
 
     if( !mbc0 ){
-	fetch('https://felipemanga.github.com/PokittoZBoy/mbc0.bin')
+	fetch('mbc0.bin')
 	    .then( rsp => rsp.arrayBuffer() )
 	    .then( ab =>{
 		mbc0 = ab;
