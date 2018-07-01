@@ -206,6 +206,30 @@ int main () {
   /* */
   #endif
 
+
+  #ifdef MARIOPALETTE
+  palette[ 7 ] = uint32_t(Display::RGBto565(255, 0, 0))<<3;
+  palette[ 6 ] = uint32_t(Display::RGBto565(0, 0, 255))<<3;
+  palette[ 5 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
+  palette[ 4 ] = uint32_t(Display::RGBto565(0xFA,0xAF,0x9A))<<3;
+
+  palette[ 11 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
+  palette[ 10 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
+  palette[ 8 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
+  palette[ 9 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
+
+  palette[ 15 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
+  palette[ 14 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
+  palette[ 13 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
+  palette[ 12 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
+  
+  palette[ 3 ] = uint32_t(Display::RGBto565(0x00,0x00,0x00))<<3;
+  palette[ 2 ] = uint32_t(Display::RGBto565(0x78,0x30,0x00))<<3;
+  palette[ 1 ] = uint32_t(Display::RGBto565(0xa8,0x60,0x00))<<3;
+  palette[ 0 ] = uint32_t(Display::RGBto565(0x48,0xa8,0xff))<<3;
+  /* */
+  #endif
+  
   
   #ifdef TETRISPALETTE
   palette[ 15 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;

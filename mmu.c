@@ -14,14 +14,15 @@ enum mbc1_models {
 
 uint8_t _MemoryInternalRAM[0x2000];    /* Internal RAM Area  [8KiB] */
 uint8_t _MemoryInternalHiRAM[128]; /* Internal RAM (high area + IE register) */
-uint8_t MemoryBankedRAM[0]; // 0x20A001];    /* Banked RAM [2MiB] */
+uint8_t _MemoryBankedRAM[0x2000]; // 0x20A001];    /* Banked RAM [2MiB] */
+uint8_t * const MemoryBankedRAM = _MemoryBankedRAM - 0xA000;
 
 #ifdef EMBEDROM
-const uint8_t MemoryROM[64*1024] = {
+const uint8_t MemoryROM[] = {
 #include EMBEDROM
 };
 #else
-const uint8_t MemoryROM[64*1024] = {0};
+const uint8_t MemoryROM[160*1024] = {0};
 #endif
 
 uint8_t _VideoRAM[0x2000];      /* Video RAM [8KiB] */
@@ -35,7 +36,7 @@ uint8_t * const IoRegisters = _IoRegisters - 0xFF00;   /* All I/O memory-mapped 
 
 
 // uint8_t MemoryMAP[0x10000];    /* Regular memory (fallback for unmapped regions) */
-int Mbc1Model = MBC1_4_32; // MBC1_16_8;    /* MBC1 memory model (MbcModel can be 1 or 2)  1=16/8 ; 2=4/32 */
+int Mbc1Model = MBC1_16_8;    /* MBC1 memory model (MbcModel can be 1 or 2)  1=16/8 ; 2=4/32 */
 int CurRomBank = 0;           /* Used for ROM bank switching (must be at least 9 bits long for MBC5 support!) */
 int CurRamBank = 0;           /* Current RAM bank selection */
 // int SaveScoresWriteProtection[2048];
@@ -79,8 +80,8 @@ uint8_t * const RAMette[] = {
   _SpriteOAM - 0xFE00,
   _IoRegisters - 0xFF00,
   _MemoryInternalHiRAM - 0xFF80,
-  MemoryROM+0x4000,
-  MemoryROM+0x8000
+  _MemoryBankedRAM - 0xA000,
+  MemoryROM
 };
 
 

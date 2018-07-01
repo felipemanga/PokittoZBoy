@@ -123,10 +123,13 @@ inline void DrawBackground( uint32_t CurScanline ) {
 
       /*FOR y = 0 TO 31 */
         LastDisplayedTile = 999; /* a valid tile number is 0..255 - I am forcing the 1st tile to get generated */
-        TileNum = (y << 5) + (IoRegisters[0xFF43] >> 3);  /* 0xFF43 is the SCX register */
+        TileNum = (IoRegisters[0xFF43] >> 3);  /* 0xFF43 is the SCX register */
+
+	BgTilesMapAddr += (y << 5);
 	
 	PixelX = -(IoRegisters[0xFF43] & 7); // ((startX << 3) - IoRegisters[0xFF43]);  /* 0xFF43 is the SCX register */
-        for (x = PixelX==0; x <= 20; x++) {
+	x = PixelX==0;
+        for (; x <= 20; x++) {
           if (TilesDataAddr == 0x8000) {
               TileToDisplay = VideoRAM[BgTilesMapAddr + TileNum];
             } else {
@@ -200,7 +203,8 @@ inline void DrawBackground( uint32_t CurScanline ) {
 	  }
 
 	  u = t;	  
-          TileNum += 1;
+          // TileNum = ((TileNum+1) & 0x1F) | (TileNum & ~0x1F);
+	  TileNum = (TileNum+1) & 0x1F;
         } /* for(x) */
       /*NEXT y */
   }
@@ -565,11 +569,6 @@ void SetScanline(uint32_t s){
   " movs %[pixel], 252                    \n"		\
   " str %[WR], [%[LCD], %[pixel]]         \n"		\
   " lsrs %[qd], %[qd], 8                  \n"		\
-  " str %[WR], [%[LCD], 124]              \n"		\
-							\
-  " movs %[pixel], 252                    \n"		\
-  " str %[WR], [%[LCD], %[pixel]]         \n"		\
-  " movs %[pixel], 252                    \n"		\
   " str %[WR], [%[LCD], 124]              \n"		\
 							\
   " uxtb %[pixel], %[qd]                  \n"		\

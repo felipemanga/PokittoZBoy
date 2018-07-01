@@ -28,12 +28,23 @@
    Note: The content of the MBC1 RAM can be saved during poweroff if the cartridge comes with a battery.
 */
 
+uint32_t RomOffset;
+
+void setBank( int b ){
+  CurRomBank = b;
+  RomOffset = (b<<14) - 0x4000;
+}
+
 void indexRAM(){
   int i=0;
-  for(; i<0x8000>>5; i++ )
+  for(; i<0x4000>>5; i++ )
     ramidx[i] = 0;
+  for(; i<0x8000>>5; i++ )
+    ramidx[i] = 8;
   for(; i<0xA000>>5; i++ )
-    ramidx[i] = 1;  
+    ramidx[i] = 1;
+  for(; i<0xC000>>5; i++ )
+    ramidx[i] = 7;
   for(; i<0xE000>>5; i++ )
     ramidx[i] = 2;
   for(; i<0xFE00>>5; i++ )
@@ -43,20 +54,17 @@ void indexRAM(){
   for(; i<0xFF80>>5; i++ )
     ramidx[i] = 5;
   for(; i<0x10000>>5; i++ )
-    ramidx[i] = 6;  
-}
-
-void setBank( int b ){
-  if( b > 1 )
-    b += 6;
-  
-  int i=0x4000>>5;
-  for(; i<0x8000>>5; i++ )
-    ramidx[i] = b;
+    ramidx[i] = 6;
+  setBank(1);
 }
 
 inline uint8_t MemoryRead(int ReadAddr) {
-  return RAMette[ ramidx[ReadAddr>>5] ][ ReadAddr ];
+  int id = ramidx[ReadAddr>>5];
+  uint8_t *buffer = RAMette[ id ];
+  if( id==8 ) buffer += RomOffset;
+
+  return buffer[ ReadAddr ];
+
   //   PrintDebug("MemoryRead 0x%04X\n", ReadAddr);
   //   if (ReadAddr < 0x4000) {                                     /* ROM bank #0 */
     //     return(MemoryROM[ReadAddr]);
@@ -80,8 +88,9 @@ inline uint8_t MemoryRead(int ReadAddr) {
 
 void MBC1Write( uint32_t memaddr, uint8_t DataByte ){
   uint32_t OldRomBank = CurRomBank;
-  
-  if ((memaddr >= 0x2000) && (memaddr < 0x4000)) {
+  if ( memaddr < 0x2000 ){
+    // nop
+  } else if ( memaddr < 0x4000 ) {
     /* Select current ROM or RAM bank on MBC1 */
     /* TODO checklist #784632 */
     if (Mbc1Model == MBC1_16_8) {  /* Mode 16/8 */
