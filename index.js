@@ -54,7 +54,7 @@ function dropFile( event ){
 	
 	let bin = new Uint8Array( mbc0.length );
 	bin.set( mbc0 );
-	bin.set( ROM, 0x122cc );
+	bin.set( ROM, 0x115cc );
 	
 	let url = URL.createObjectURL( new Blob([bin.buffer], {type:'application/bin'}) );
 	let a = document.createElement('A');
