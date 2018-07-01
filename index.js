@@ -9,7 +9,27 @@ function cancelEvent( event ){
     event.preventDefault();
 }
 
-let mbc0;
+let mappers = {};
+
+fetch('mbc0.bin')
+    .then( rsp => rsp.arrayBuffer() )
+    .then( ab =>{
+	mappers[0] = {
+	    bin:new Uint8Array(ab),
+	    offset:0x115cc,
+	    max: 0x10000
+	};
+    });
+
+fetch('mbc1.bin')
+    .then( rsp => rsp.arrayBuffer() )
+    .then( ab =>{
+	mappers[1] = {
+	    bin:new Uint8Array(ab),
+	    offset:0x11f44,
+	    max: 0x20000
+	};
+    });
 
 function dropFile( event ){
     cancelEvent( event );
@@ -20,41 +40,30 @@ function dropFile( event ){
     var pendingPal = 1;
     var pending = 0;
 
-    if( !mbc0 ){
-	fetch('mbc0.bin')
-	    .then( rsp => rsp.arrayBuffer() )
-	    .then( ab =>{
-		mbc0 = new Uint8Array(ab);
-		load();
-	    });
-    }else{
-	load();
-    }
-
-    function load(){
-	for (var i = 0; i < files.length; i++) {
-	    let file = files[i];
-	    let fr = new FileReader();
-	    fr.onload = evt => process( new Uint8Array(fr.result), file.name.replace(/\.[a-z]+$/i, '') );
-	    fr.readAsArrayBuffer( file );	
-	}
+    for (var i = 0; i < files.length; i++) {
+	let file = files[i];
+	let fr = new FileReader();
+	fr.onload = evt => process( new Uint8Array(fr.result), file.name.replace(/\.[a-z]+$/i, '') );
+	fr.readAsArrayBuffer( file );	
     }
 
     function process( ROM, name ){
 
-	if( ROM[0x147] ){
+	let mapper = mappers[ ROM[0x147] ];
+	
+	if( !mapper ){
 	    log( name + " bad mapper: " + ROM[0x147] );
 	    return;
 	}
 
-	if( ROM.length >= 0x10000 ){
+	if( ROM.length >= mapper.max ){
 	    log( name + " too big!" );
 	    return;		 
 	}
 	
-	let bin = new Uint8Array( mbc0.length );
-	bin.set( mbc0 );
-	bin.set( ROM, 0x115cc );
+	let bin = new Uint8Array( mapper.bin.length );
+	bin.set( mapper.bin );
+	bin.set( ROM, mapper.offset );
 	
 	let url = URL.createObjectURL( new Blob([bin.buffer], {type:'application/bin'}) );
 	let a = document.createElement('A');
