@@ -4,7 +4,6 @@
   Copyright (C) Mateusz Viste 2010,2011,2012,2013
 */
 
-
 struct CpuRegisters { /* Note: IX and IY have been removed from the GB Z80 clone */
   /* 8 bit registers */
   uint8_t A;   /* Accumulator */

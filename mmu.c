@@ -15,11 +15,12 @@ enum mbc1_models {
 uint8_t _MemoryInternalRAM[0x2000];    /* Internal RAM Area  [8KiB] */
 uint8_t _MemoryInternalHiRAM[128]; /* Internal RAM (high area + IE register) */
 uint8_t MemoryBankedRAM[0]; // 0x20A001];    /* Banked RAM [2MiB] */
-#ifdef EMBEDROM
-    #include EMBEDROM
-  #else
-    uint8_t MemoryROM[4194304];       /* Declare an empty table for ROM Area (redim later at loadrom time) */
-#endif
+
+const uint8_t MemoryROM[64*1024] = {
+  0
+  //    #include EMBEDROM
+};
+
 uint8_t _VideoRAM[0x2000];      /* Video RAM [8KiB] */
 uint8_t _SpriteOAM[0xA0];     /* Sprite OAM memory */
 uint8_t _IoRegisters[0x80];   /* All I/O memory-mapped registers */

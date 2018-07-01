@@ -225,6 +225,7 @@ inline void DrawWindow( uint32_t CurScanline ) {
 
    The palette for both background and window is located at FF47h (BGP)
   */
+  
   static signed int x, y, z, t, UbyteBuff1, UbyteBuff2, pixrow;
   static signed int TilesMapAddress, TilesDataAddress, TileNum, TileToDisplay, PixelX, TileTempAddress;
   static uint8_t TileBufferWin[64];
@@ -483,29 +484,32 @@ void FlushScanline(){
   
   uint8_t *d = framebuffer;
   uint32_t x;
+  volatile uint32_t c = palette[*d++];
+  
   for(x=0;x<160;x+=16){
       
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
-    *LCD = palette[*d++]; *SET=1<<12; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=*LCD; *CLR=1<<12; *SET=1<<12; c = palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=*LCD; *CLR=1<<12; *SET=1<<12; c = palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=*LCD; *CLR=1<<12; *SET=1<<12; c = palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=*LCD; *CLR=1<<12; *SET=1<<12; c = palette[*d++]; *CLR=1<<12;
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     
   }
   
 }
+
+uint32_t frameCount;
 
 static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams) {
   // static int x1, x2, y1, y2, x, y;
@@ -515,6 +519,7 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
 
   VideoClkCounterVBlank += cycles;
   if (VideoClkCounterVBlank >= 70224) {
+    frameCount++;
     CurLY = 0;
     VideoClkCounterVBlank -= 70224;
     VideoClkCounterMode = VideoClkCounterVBlank; /* Sync VideoClkCounterMode with VideoClkCounterVBlank */
@@ -578,19 +583,22 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
           if (GetLcdMode() != 0) {   /* Check if not already in mode 0 */
             if ((IoRegisters[0xFF40] & bx10000000) > 0) {   /* If LCD is ON... */
               if (LastLYdraw != CurLY) {                    /* And curline hasn't been drawn yet... */		
-                LastLYdraw = CurLY;
-		if( !frameskip ){
+		if( !frameskip && CurLY>2 && CurLY < 155 ){
 		  
-                DrawBackground(CurLY);                      /* Generate current scanline */
-                DrawWindow(CurLY);
-                DrawSprites(CurLY);
+		  DrawBackground(CurLY);                      /* Generate current scanline */
+		  DrawWindow(CurLY);
+		  DrawSprites(CurLY);
 
-		if( LastLYdraw != CurLY -1 )
-		  drv_setscanline(CurLY);
+		  if( LastLYdraw != CurLY -1 )
+		    drv_setscanline(CurLY);
 		
-		FlushScanline();
+		  FlushScanline();
+
+		  if( !(CurLY&3) )
+		    FlushScanline();
 
 		}
+                LastLYdraw = CurLY;
 		
               }
             }
