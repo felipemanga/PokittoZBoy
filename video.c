@@ -294,7 +294,7 @@ inline void DrawWindow( uint32_t CurScanline ) {
 }
 
 
-void DrawSprites( uint32_t CurScanline ) {
+void DrawSprites( int32_t CurScanline ) {
   
   int PatternNum, SpriteFlags, UbyteBuff1, UbyteBuff2, SpritePalette, x, y, z, t, xx;
   int SpritePosX, SpritePosY, SpriteMaxY;
@@ -477,36 +477,194 @@ static inline void SetLcdMode(uint8_t x) {
 
 #define DIV456( A ) (A) * (0x1000000 / 456) >> 24
 
+void write_data_16(uint16_t data);
+void write_command_16(uint16_t data);
+
+void SetScanline(uint32_t s){
+  volatile uint32_t *SET = (uint32_t *) 0xA0002200;
+
+#ifdef SCALING
+  write_command_16(0x20); write_data_16(s+((s+3)>>2)-4);
+  write_command_16(0x21); write_data_16(10);
+#else
+  write_command_16(0x20); write_data_16(16+s);
+  write_command_16(0x21); write_data_16(30);
+#endif
+  
+  write_command_16(0x22);
+  
+  // CLR_CS_SET_CD_RD_WR;
+  SET[0] = 1 << 2;
+  SET[1] = 1 << 24;
+  SET[1] = 1 << 12;
+}
+
+#ifdef SCALING
+
+
+#define FLUSH_QUAD					\
+  " ldm %[pixelptr]!, {%[qd]}             \n"		\
+  " uxtb %[pixel], %[qd]                  \n"		\
+  " lsls %[pixel], %[pixel], 2            \n"		\
+  " ldr %[pixel], [%[palette], %[pixel]]  \n"	       \
+  " str %[pixel], [%[LCD], 0]             \n"	       \
+  " movs %[pixel], 252                    \n"	       \
+  " str %[WR], [%[LCD], %[pixel]]         \n"	       \
+  " lsrs %[qd], %[qd], 8                  \n"	       \
+  " str %[WR], [%[LCD], 124]              \n"	       \
+						       \
+  " uxtb %[pixel], %[qd]                  \n"	       \
+  " lsls %[pixel], %[pixel], 2            \n"	       \
+  " ldr %[pixel], [%[palette], %[pixel]]  \n"	       \
+  " str %[pixel], [%[LCD], 0]             \n"	       \
+  " movs %[pixel], 252                    \n"	       \
+  " str %[WR], [%[LCD], %[pixel]]         \n"	       \
+  " lsrs %[qd], %[qd], 8                  \n"	       \
+  " str %[WR], [%[LCD], 124]              \n"	       \
+						       \
+  " movs %[pixel], 252                    \n"	       \
+  " str %[WR], [%[LCD], %[pixel]]         \n"	       \
+  " movs %[pixel], 252                    \n"	       \
+  " str %[WR], [%[LCD], 124]              \n"	       \
+						       \
+  " uxtb %[pixel], %[qd]                  \n"	 \
+  " lsls %[pixel], %[pixel], 2            \n"	 \
+  " ldr %[pixel], [%[palette], %[pixel]]  \n"	 \
+  " str %[pixel], [%[LCD], 0]             \n"	 \
+  " movs %[pixel], 252                    \n"	 \
+  " str %[WR], [%[LCD], %[pixel]]         \n"	 \
+  " lsrs %[qd], %[qd], 8                  \n"	 \
+  " str %[WR], [%[LCD], 124]              \n"	 \
+						 \
+  " uxtb %[pixel], %[qd]                  \n"	 \
+  " lsls %[pixel], %[pixel], 2            \n"	 \
+  " ldr %[pixel], [%[palette], %[pixel]]  \n"	 \
+  " str %[pixel], [%[LCD], 0]             \n"	 \
+  " movs %[pixel], 252                    \n"	 \
+  " str %[WR], [%[LCD], %[pixel]]         \n"	 \
+  "subs %[x], 4                           \n"	 \
+  " str %[WR], [%[LCD], 124]              \n"
+
+#else
+
+#define FLUSH_QUAD					\
+  " ldm %[pixelptr]!, {%[qd]}             \n"		\
+  " uxtb %[pixel], %[qd]                  \n"		\
+  " lsls %[pixel], %[pixel], 2            \n"		\
+  " ldr %[pixel], [%[palette], %[pixel]]  \n"		\
+  " str %[pixel], [%[LCD], 0]             \n"		\
+  " movs %[pixel], 252                    \n"		\
+  " str %[WR], [%[LCD], %[pixel]]         \n"		\
+  " lsrs %[qd], %[qd], 8                  \n"		\
+  " str %[WR], [%[LCD], 124]              \n"		\
+							\
+  " uxtb %[pixel], %[qd]                  \n"		\
+  " lsls %[pixel], %[pixel], 2            \n"		\
+  " ldr %[pixel], [%[palette], %[pixel]]  \n"		\
+  " str %[pixel], [%[LCD], 0]             \n"		\
+  " movs %[pixel], 252                    \n"		\
+  " str %[WR], [%[LCD], %[pixel]]         \n"		\
+  " lsrs %[qd], %[qd], 8                  \n"		\
+  " str %[WR], [%[LCD], 124]              \n"		\
+							\
+  " movs %[pixel], 252                    \n"		\
+  " str %[WR], [%[LCD], %[pixel]]         \n"		\
+  " movs %[pixel], 252                    \n"		\
+  " str %[WR], [%[LCD], 124]              \n"		\
+							\
+  " uxtb %[pixel], %[qd]                  \n"		\
+  " lsls %[pixel], %[pixel], 2            \n"		\
+  " ldr %[pixel], [%[palette], %[pixel]]  \n"		\
+  " str %[pixel], [%[LCD], 0]             \n"		\
+  " movs %[pixel], 252                    \n"		\
+  " str %[WR], [%[LCD], %[pixel]]         \n"		\
+  " lsrs %[qd], %[qd], 8                  \n"		\
+  " str %[WR], [%[LCD], 124]              \n"		\
+							\
+  " uxtb %[pixel], %[qd]                  \n"		\
+  " lsls %[pixel], %[pixel], 2            \n"		\
+  " ldr %[pixel], [%[palette], %[pixel]]  \n"		\
+  " str %[pixel], [%[LCD], 0]             \n"		\
+  " movs %[pixel], 252                    \n"		\
+  " str %[WR], [%[LCD], %[pixel]]         \n"		\
+  "subs %[x], 4                           \n"		\
+  " str %[WR], [%[LCD], 124]              \n"
+      
+#endif
+      
+
 void FlushScanline(){
-  volatile uint32_t *LCD = (uint32_t *) 0xA0002188;
+  uint32_t *LCD = (uint32_t *) 0xA0002188;
   volatile uint32_t *SET = (uint32_t *) 0xA0002284;
   volatile uint32_t *CLR = (uint32_t *) 0xA0002204;
   
   uint8_t *d = framebuffer;
-  uint32_t x;
-  volatile uint32_t c = palette[*d++];
+  uint32_t x = 160, pixel, quad, WR = 1<<12, *pal=palette;
+  /* */
+
+  asm volatile(
+      ".syntax unified                \n"
+      
+      "nextPixelLoop%=:                       \n"
+      FLUSH_QUAD      
+      FLUSH_QUAD      
+      "bne nextPixelLoop%=                    \n"
+
+      : // outputs
+	[pixelptr]"+l"(d),
+	[x]"+l"(x),
+	[pixel]"=l"(pixel),
+	[qd]"=l"(quad),
+	[palette]"+l"(pal),
+	[WR]"+l"(WR),
+	[LCD]"+l"(LCD)
+	
+      : // inputs
+	
+      : // clobbers
+	"cc"
+      );
   
+  /*/
+  
+  volatile uint32_t c = palette[*d++];  
   for(x=0;x<160;x+=16){
       
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+#ifdef SCALING
     *LCD = c; *SET=1<<12; c=*LCD; *CLR=1<<12; *SET=1<<12; c = palette[*d++]; *CLR=1<<12;
+#else
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+#endif
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+#ifdef SCALING
     *LCD = c; *SET=1<<12; c=*LCD; *CLR=1<<12; *SET=1<<12; c = palette[*d++]; *CLR=1<<12;
+#else
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+#endif
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+#ifdef SCALING
     *LCD = c; *SET=1<<12; c=*LCD; *CLR=1<<12; *SET=1<<12; c = palette[*d++]; *CLR=1<<12;
+#else
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+#endif
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+#ifdef SCALING
     *LCD = c; *SET=1<<12; c=*LCD; *CLR=1<<12; *SET=1<<12; c = palette[*d++]; *CLR=1<<12;
+#else
+    *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
+#endif
     *LCD = c; *SET=1<<12; c=palette[*d++]; *CLR=1<<12;
     
   }
-  
+  /* */
 }
 
 uint32_t frameCount;
@@ -516,9 +674,10 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
   static unsigned int LastFullframeRenderingTime = 0;
   static uint32_t OneSecondPollingTimer = 0;
   static uint32_t frameskip = 0;
+  uint32_t checkInput = 0;
 
   VideoClkCounterVBlank += cycles;
-  if (VideoClkCounterVBlank >= 70224) {
+  if (VideoClkCounterVBlank >= 70224) {    
     frameCount++;
     CurLY = 0;
     VideoClkCounterVBlank -= 70224;
@@ -551,9 +710,10 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
         SetLcdMode(1);   /* Here I set LCD mode 1 */
         INT(INT_VBLANK);   /* Ask for the VBLANK interrupt */
 
-	if( !frameskip )
+	if( !frameskip ){
 	  frameskip = 2;
-	else
+	  checkInput = 1;
+	}else
 	  frameskip--;
 	
         if ((IoRegisters[0xFF40] & bx10000000) == 0) {   /* The LCD is off, make it all black */
@@ -583,19 +743,24 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
           if (GetLcdMode() != 0) {   /* Check if not already in mode 0 */
             if ((IoRegisters[0xFF40] & bx10000000) > 0) {   /* If LCD is ON... */
               if (LastLYdraw != CurLY) {                    /* And curline hasn't been drawn yet... */		
-		if( !frameskip && CurLY>2 && CurLY < 155 ){
+		if( !frameskip
+		    #ifdef SCALING
+		    && CurLY>2 && CurLY < 155
+		    #endif
+		    ){
 		  
 		  DrawBackground(CurLY);                      /* Generate current scanline */
 		  DrawWindow(CurLY);
 		  DrawSprites(CurLY);
 
 		  if( LastLYdraw != CurLY -1 )
-		    drv_setscanline(CurLY);
+		    SetScanline(CurLY);
 		
 		  FlushScanline();
-
+		  #ifdef SCALING
 		  if( !(CurLY&3) )
 		    FlushScanline();
+		  #endif
 
 		}
                 LastLYdraw = CurLY;
@@ -610,4 +775,6 @@ static inline void VideoSysUpdate(int cycles, struct zboyparamstype *zboyparams)
           }
       }
   }
+
+
 }

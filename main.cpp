@@ -1,31 +1,55 @@
 
 #include "Pokitto.h"
 
-extern "C" {
-#include "drv.h"
-}
-
 using namespace Pokitto;
 
-extern "C" int zboymain(int argc, char **argv);
+extern "C" {
+#include "drv.h"
 
-extern uint8_t *framebuffer;
+  
+
+void write_command_16(uint16_t data)
+{
+   CLR_CS; // select lcd
+   CLR_CD; // clear CD = command
+   SET_RD; // RD high, do not read
+  *LCD = uint32_t(data) << 3;
+   CLR_WR_SLOW;  // WR low
+   SET_WR;  // WR low, then high = write strobe
+   SET_CS; // de-select lcd
+}
+
+void write_data_16(uint16_t data)
+{
+  CLR_CS;
+  SET_CD;
+  SET_RD;
+  *LCD = uint32_t(data) << 3;
+  CLR_WR;
+  SET_WR;
+  SET_CS;
+}
+
+int zboymain(int argc, char **argv);
+
+}
+
+
+// extern uint8_t *framebuffer;
 
 /* initialization of the I/O subsystem. This is called by zBoy once, when the
  * emulator starts. screenwidth and screenheight must contain the size of
  * requested virtual screen, joyid is either the id of the joystick that have
  * to be polled (0..x) or -1 if no joystick support is required. */
 extern "C" int drv_init(int screenwidth, int screenheight, int joyid){
-  framebuffer = Pokitto::Display::screenbuffer;
+  // framebuffer = Pokitto::Display::screenbuffer;
   return 0;
 }
 
-/* renders the screen from the memory buffer into the actual screen */
-extern "C" void drv_refreshscreen(void){
-  Pokitto::Display::update();
-}
+uint32_t prevTime;
+extern uint32_t frameCount;
 
-uint8_t reported = 0, changes = 0;
+uint32_t reported = 0, changes = 0, selectbtn = 0;
 /* returns the next input event in queue */
 int drv_keypoll(void){
   
@@ -72,22 +96,41 @@ int drv_keypoll(void){
   if( (changes & (1<<ABIT)) && !(reported & (1<<ABIT)) ){
     reported |= 1<<ABIT;
     if( Buttons::buttons_state & (1<<ABIT) )
-      return DRV_INPUT_KEYDOWN | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_LCTRL;
-    else 
-      return DRV_INPUT_KEYUP | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_LCTRL;
-  }
-
-  if( (changes & (1<<BBIT)) && !(reported & (1<<BBIT)) ){
-    reported |= 1<<BBIT;
-    if( Buttons::buttons_state & (1<<BBIT) )
       return DRV_INPUT_KEYDOWN | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_LALT;
     else 
       return DRV_INPUT_KEYUP | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_LALT;
   }
 
+  if( (changes & (1<<BBIT)) && !(reported & (1<<BBIT)) ){
+    reported |= 1<<BBIT;
+    if( Buttons::buttons_state & (1<<BBIT) )
+      return DRV_INPUT_KEYDOWN | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_LCTRL;
+    else 
+      return DRV_INPUT_KEYUP | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_LCTRL;
+  }
+
+  if( (changes & (1<<7)) && !(reported & (1<<7)) ){
+    reported |= 1<<7;
+    if( selectbtn )
+      return DRV_INPUT_KEYDOWN | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_TAB;
+    else 
+      return DRV_INPUT_KEYUP | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_TAB;
+  }
+  
   reported = 0;
-  Buttons::pollButtons();    
+  Buttons::pollButtons();
+  
   changes = Buttons::buttons_state ^ (Buttons::buttons_held | Buttons::buttons_released);
+
+  if( !*((uint8_t *) 0xA0000001) ){
+    if( !selectbtn )
+      changes |= 1<<7;
+    selectbtn = 1;
+  }else if( selectbtn ){
+    changes |= 1<<7;
+    selectbtn = 0;
+  }
+  
   return DRV_INPUT_NONE;
   
 }
@@ -105,6 +148,8 @@ unsigned long drv_getticks(void){
 }
 
 extern "C" void indexRAM();
+
+extern "C" uint32_t palette[];
 
 int main () {
   
@@ -127,22 +172,131 @@ int main () {
   Display::palette[0] = Display::RGBto565( 0xac, 0xb5, 0x6b );
   /*/
 
-  Display::palette[3] = Display::RGBto565( 0x33,0x2c,0x50 );
-  Display::palette[2] = Display::RGBto565( 0x46,0x87,0x8f );
-  Display::palette[1] = Display::RGBto565( 0x94,0xe3,0x44 );
-  Display::palette[0] = Display::RGBto565( 0xe2,0xf3,0xe4 );
-  
+  /* * /
 
-
-
-
-
+  palette[3] = uint32_t(Display::RGBto565( 0x33,0x2c,0x50 ))<<3;
+  palette[2] = uint32_t(Display::RGBto565( 0x46,0x87,0x8f ))<<3;
+  palette[1] = uint32_t(Display::RGBto565( 0x94,0xe3,0x44 ))<<3;
+  palette[0] = uint32_t(Display::RGBto565( 0xe2,0xf3,0xe4 ))<<3;
 
   /* */
+ 
+  /* DRMARIO */
+  #ifdef DRMARIOPALETTE
+  palette[ 7 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;
+  palette[ 6 ] = uint32_t(Display::RGBto565(95, 87, 79))<<3;
+  palette[ 5 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
+  palette[ 4 ] = uint32_t(Display::RGBto565(141, 173, 255))<<3;
+  // palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
+
+  palette[ 11 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
+  palette[ 10 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
+  palette[ 8 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
+  palette[ 9 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
+
+  palette[ 15 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
+  palette[ 14 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
+  palette[ 13 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
+  palette[ 12 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
+  
+  palette[ 3 ] = uint32_t(Display::RGBto565(29, 43, 83))<<3;
+  palette[ 2 ] = uint32_t(Display::RGBto565(171, 82, 54))<<3;
+  palette[ 1 ] = uint32_t(Display::RGBto565(131, 118, 156))<<3;
+  palette[ 0 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
+  /* */
+  #endif
+
+  
+  #ifdef TETRISPALETTE
+  palette[ 15 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;
+  palette[ 14 ] = uint32_t(Display::RGBto565(95, 87, 79))<<3;
+  palette[ 13 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
+  palette[ 12 ] = uint32_t(Display::RGBto565(141, 173, 255))<<3;
+  // palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
+
+  palette[ 3 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
+  palette[ 2 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
+  palette[ 1 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
+  palette[ 0 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
+  
+  palette[ 7 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
+  palette[ 6 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
+  palette[ 5 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
+  palette[ 4 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
+  
+  palette[ 11 ] = uint32_t(Display::RGBto565(29, 43, 83))<<3;
+  palette[ 10 ] = uint32_t(Display::RGBto565(171, 82, 54))<<3;
+  palette[ 8 ] = uint32_t(Display::RGBto565(131, 118, 156))<<3;
+  palette[ 9 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
+  
+  #endif
+
+
+  #ifdef BBGHSTPALETTE
+  palette[ 15 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;
+  palette[ 14 ] = uint32_t(Display::RGBto565(95, 87, 79))<<3;
+  palette[ 13 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
+  palette[ 12 ] = uint32_t(Display::RGBto565(141, 173, 255))<<3;
+  // palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
+
+  palette[ 3 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
+  palette[ 2 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
+  palette[ 1 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
+  palette[ 0 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
+  
+  palette[ 11 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
+  palette[ 10 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
+  palette[ 8 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
+  palette[ 9 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
+  
+  palette[ 7 ] = uint32_t(Display::RGBto565(29, 43, 83))<<3;
+  palette[ 6 ] = uint32_t(Display::RGBto565(171, 82, 54))<<3;
+  palette[ 5 ] = uint32_t(Display::RGBto565(131, 118, 156))<<3;
+  palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
+  
+  #endif
+  
+
+  #ifdef TENNISPALETTE
+  palette[ 3 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;
+  palette[ 2 ] = uint32_t(Display::RGBto565(95, 87, 79))<<3;
+  palette[ 1 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
+  palette[ 0 ] = uint32_t(Display::RGBto565(141, 173, 255))<<3;
+  // palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
+
+  palette[ 11 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
+  palette[ 10 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
+  palette[ 8 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
+  palette[ 9 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
+  
+  palette[ 15 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
+  palette[ 14 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
+  palette[ 13 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
+  palette[ 12 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
+  
+  palette[ 4 ] = uint32_t(Display::RGBto565(29, 43, 83))<<3;
+  palette[ 7 ] = uint32_t(Display::RGBto565(171, 82, 54))<<3;
+  palette[ 6 ] = uint32_t(Display::RGBto565(131, 118, 156))<<3;
+  palette[ 5 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
+  
+  #endif
+  
   indexRAM();
 
+
   Pokitto::lcdClear();
-  Display::clear();
+
+  #ifdef SCALING
+  Pokitto::setWindow( 0, 10, 176, 199+10 );
+  #else
+  Pokitto::setWindow( 16, 30, 144+15, 159+30 );
+  #endif
+
+  SET_MASK_P2;
+  write_command_16(0x03); write_data_16(0x1038);
+  write_command_16(0x22);
+  CLR_CS_SET_CD_RD_WR;
+
   zboymain(0, args);
   
 }

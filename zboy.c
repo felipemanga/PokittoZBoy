@@ -202,10 +202,10 @@ int zboymain(int argc, char **argv) {
   while (QuitEmulator == 0) {
 
     int partial = 0;
-    partial += CpuExec() << 1;
     partial += CpuExec();
     partial += CpuExec();
-    partial = partial << 1;
+    partial += CpuExec();
+    partial += CpuExec();
     partial += CpuExec();
     UsedCycles = partial;
     
@@ -216,10 +216,10 @@ int zboymain(int argc, char **argv) {
 
     
     partial = 0;
-    partial += CpuExec() << 1;
     partial += CpuExec();
     partial += CpuExec();
-    partial = partial << 1;
+    partial += CpuExec();
+    partial += CpuExec();
     partial += CpuExec();
     UsedCycles += partial;
 

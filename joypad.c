@@ -280,103 +280,92 @@ int zboyScancodeToBackendScancode(char *zboyScanCode, int *iflag) {
 #define ButtonQuitIsReleased(); \
   QuitEmulator = 1;
 
-
-inline void CheckJoypad(int cycles, struct zboyparamstype *zboyparams) {
-  static uint64_t JoyCheckCounter = 0;
-  // static int turbo_a = 0, turbo_b = 0;
+uint32_t JoyCheckCounter;
+inline void CheckJoypad( uint32_t cycles, struct zboyparamstype *zboyparams) {
   int JoyNewReg;
-  // static uint64_t turbo_a_nextswap = 0, turbo_b_nextswap = 0;
   int event;
 
   JoyCheckCounter += cycles;
 
-  if (JoyCheckCounter > 80000) {  /* Check joypad state every ~20 ms */
-    JoyCheckCounter = 0;
-    /* Now poll the event queue... */
-    while ((event = drv_keypoll()) != DRV_INPUT_NONE) {
-        switch (drv_event_gettype(event)) {
-            case DRV_INPUT_KEYBOARD | DRV_INPUT_KEYDOWN:
-            case DRV_INPUT_JOYSTICK | DRV_INPUT_JOYDOWN:
-            case DRV_INPUT_JOYSTICK | DRV_INPUT_JOYAXDOWN:
-                if (drv_event_getval(event) == zboyparams->key_start) {
-                    StartIsPressed();
-                  } else if (drv_event_getval(event) == zboyparams->key_select) {
-                    SelectIsPressed();
-                  } else if (drv_event_getval(event) == zboyparams->key_b) {
-                    ButtonBisPressed();
-                  } else if (drv_event_getval(event) == zboyparams->key_a) {
-                    ButtonAisPressed();
-                  } else if (drv_event_getval(event) == zboyparams->key_up) {
-                    UpIsPressed();
-                  } else if (drv_event_getval(event) == zboyparams->key_down) {
-                    DownIsPressed();
-                  } else if (drv_event_getval(event) == zboyparams->key_left) {
-                    LeftIsPressed();
-                  } else if (drv_event_getval(event) == zboyparams->key_right) {
-                    RightIsPressed();
-                }
-                break;
-            case DRV_INPUT_KEYBOARD | DRV_INPUT_KEYUP:
-            case DRV_INPUT_JOYSTICK | DRV_INPUT_JOYUP:
-            case DRV_INPUT_JOYSTICK | DRV_INPUT_JOYAXUP:
-                if (drv_event_getval(event) == zboyparams->key_start) { /* ENTER */
-                    StartIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_select) { /* TAB */
-                    SelectIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_b) { /* ALT */
-                    ButtonBisReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_a) { /* LCTRL */
-                    ButtonAisReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_up) { /* UP */
-                    UpIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_down) { /* DOWN */
-                    DownIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_left) { /* LEFT */
-                    LeftIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_right) { /* RIGHT */
-                    RightIsReleased();
-		    /*
-                  } else if (drv_event_getval(event) == zboyparams->key_bckg) { /* F1 * /
-                    ButtonBgctrlIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_sprt) { /* F2 * /
-                    ButtonSprctrlIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_wind) { /* F3 * /
-                    ButtonWinctrlIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_save) { /* F5 * /
-		  // ButtonSaveIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_load) { /* F7 * /
-		  // ButtonLoadIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_asht) { /* F8 * /
-                    ButtonAutoscreenshotIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_shot) { /* F9 * /
-                    ButtonScreenshotIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_rset) { /* F10 * /
-                    ButtonResetIsReleased();
-                  } else if (drv_event_getval(event) == zboyparams->key_quit) { /* ESC * /
-                    ButtonQuitIsReleased();
-		    /* */
-                }
-                break;
-            case DRV_INPUT_QUIT:
-                QuitEmulator = 1;
-                break;
-	}
+  if (JoyCheckCounter < 80000 ) {
+    /* Check joypad state every ~20 ms */
+    return;
+  }
+  
+  JoyCheckCounter = 0;
+  /* Now poll the event queue... */
+  while ((event = drv_keypoll()) != DRV_INPUT_NONE) {
+    switch (drv_event_gettype(event)) {
+    case DRV_INPUT_KEYBOARD | DRV_INPUT_KEYDOWN:
+    case DRV_INPUT_JOYSTICK | DRV_INPUT_JOYDOWN:
+    case DRV_INPUT_JOYSTICK | DRV_INPUT_JOYAXDOWN:
+      if (drv_event_getval(event) == zboyparams->key_start) {
+	StartIsPressed();
+      } else if (drv_event_getval(event) == zboyparams->key_select) {
+	SelectIsPressed();
+      } else if (drv_event_getval(event) == zboyparams->key_b) {
+	ButtonBisPressed();
+      } else if (drv_event_getval(event) == zboyparams->key_a) {
+	ButtonAisPressed();
+      } else if (drv_event_getval(event) == zboyparams->key_up) {
+	UpIsPressed();
+      } else if (drv_event_getval(event) == zboyparams->key_down) {
+	DownIsPressed();
+      } else if (drv_event_getval(event) == zboyparams->key_left) {
+	LeftIsPressed();
+      } else if (drv_event_getval(event) == zboyparams->key_right) {
+	RightIsPressed();
+      }
+      break;
+    case DRV_INPUT_KEYBOARD | DRV_INPUT_KEYUP:
+    case DRV_INPUT_JOYSTICK | DRV_INPUT_JOYUP:
+    case DRV_INPUT_JOYSTICK | DRV_INPUT_JOYAXUP:
+      if (drv_event_getval(event) == zboyparams->key_start) { /* ENTER */
+	StartIsReleased();
+      } else if (drv_event_getval(event) == zboyparams->key_select) { /* TAB */
+	SelectIsReleased();
+      } else if (drv_event_getval(event) == zboyparams->key_b) { /* ALT */
+	ButtonBisReleased();
+      } else if (drv_event_getval(event) == zboyparams->key_a) { /* LCTRL */
+	ButtonAisReleased();
+      } else if (drv_event_getval(event) == zboyparams->key_up) { /* UP */
+	UpIsReleased();
+      } else if (drv_event_getval(event) == zboyparams->key_down) { /* DOWN */
+	DownIsReleased();
+      } else if (drv_event_getval(event) == zboyparams->key_left) { /* LEFT */
+	LeftIsReleased();
+      } else if (drv_event_getval(event) == zboyparams->key_right) { /* RIGHT */
+	RightIsReleased();
+	/*
+	  } else if (drv_event_getval(event) == zboyparams->key_bckg) { /* F1 * /
+	  ButtonBgctrlIsReleased();
+	  } else if (drv_event_getval(event) == zboyparams->key_sprt) { /* F2 * /
+	  ButtonSprctrlIsReleased();
+	  } else if (drv_event_getval(event) == zboyparams->key_wind) { /* F3 * /
+	  ButtonWinctrlIsReleased();
+	  } else if (drv_event_getval(event) == zboyparams->key_save) { /* F5 * /
+	  // ButtonSaveIsReleased();
+	  } else if (drv_event_getval(event) == zboyparams->key_load) { /* F7 * /
+	  // ButtonLoadIsReleased();
+	  } else if (drv_event_getval(event) == zboyparams->key_asht) { /* F8 * /
+	  ButtonAutoscreenshotIsReleased();
+	  } else if (drv_event_getval(event) == zboyparams->key_shot) { /* F9 * /
+	  ButtonScreenshotIsReleased();
+	  } else if (drv_event_getval(event) == zboyparams->key_rset) { /* F10 * /
+	  ButtonResetIsReleased();
+	  } else if (drv_event_getval(event) == zboyparams->key_quit) { /* ESC * /
+	  ButtonQuitIsReleased();
+	  /* */
+      }
+      break;
+    case DRV_INPUT_QUIT:
+      QuitEmulator = 1;
+      break;
     }
   }
 
   JoyRegA = 0xF ^ (KeyState.Down | KeyState.Up | KeyState.Left | KeyState.Right);
-  // if (KeyState.Down != 0) JoyNewReg &= bx11110111; /* if DOWN -> Set P13 */
-  // if (KeyState.Up != 0) JoyNewReg &= bx11111011; /* if UP -> Set P12 */
-  // if (KeyState.Left != 0) JoyNewReg &= bx11111101; /* if LEFT -> Set P11 */
-  // if (KeyState.Right != 0) JoyNewReg &= bx11111110; /* if RIGHT -> Set P10 */
-
   JoyRegB = 0xF ^ (KeyState.Start | KeyState.Select | KeyState.A | KeyState.B);
-  //  if (KeyState.Start != 0) JoyNewReg &= bx11110111; /* if ENTER -> Set P13 */
-  //  if (KeyState.Select != 0) JoyNewReg &= bx11111011; /* if TAB -> Set P12 */
-  //  if (KeyState.A != 0) JoyNewReg &= bx11111101; /* if CTRL -> Set P11 */
-  //  if (KeyState.B != 0) JoyNewReg &= bx11111110; /* if ALT -> Set P10 */
-
-  // if (JoyOldReg != JoyNewReg) JoyOldReg = JoyNewReg; /* If a key has been pressed/released update the JoyOldReg variable */
   JoypadWrite( IoRegisters[0xFF00] );
   
 }

@@ -166,6 +166,4 @@ int drv_close(void);
  * available in *dir */
 void drv_getsavedir(char *dir, int maxlen);
 
-void drv_setscanline(uint32_t CurLY);
-
 #endif

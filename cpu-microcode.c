@@ -39,7 +39,7 @@ inline void SetFlagZ(void) { /* F struct: "ZNHC0000" */
 inline void ResetFlagZ(void) {
   Register.F &= bx01111111;
 }
-#define GetFlagZ() ((Register.F & bx10000000) >> 7)
+#define GetFlagZ() (Register.F>>7) // ((Register.F & bx10000000) >> 7)
 
 inline void SetFlagN(void) { /* F struct: "ZNHC0000" */
   Register.F |= bx01000000;
@@ -47,7 +47,7 @@ inline void SetFlagN(void) { /* F struct: "ZNHC0000" */
 inline void ResetFlagN(void) {
   Register.F &= bx10111111;
 }
-#define GetFlagN() ((Register.F & bx01000000) >> 6)
+#define GetFlagN() ((Register.F>>6)&1) // ((Register.F & bx01000000) >> 6)
 
 inline void SetFlagH(void) { /* F struct: "ZNHC0000" */
   Register.F |= bx00100000;
@@ -55,7 +55,7 @@ inline void SetFlagH(void) { /* F struct: "ZNHC0000" */
 inline void ResetFlagH(void) {
   Register.F &= bx11011111;
 }
-#define GetFlagH() ((Register.F & bx00100000) >> 5)
+#define GetFlagH() ((Register.F>>5)&1) // ((Register.F & bx00100000) >> 5)
 
 inline void SetFlagC(void) { /* F struct: "ZNHC0000" */
   Register.F |= bx00010000;
@@ -63,7 +63,7 @@ inline void SetFlagC(void) { /* F struct: "ZNHC0000" */
 inline void ResetFlagC(void) {
   Register.F &= bx11101111;
 }
-#define GetFlagC() ((Register.F & bx00010000) >> 4)
+#define GetFlagC() ((Register.F>>4)&1) // ((Register.F & bx00010000) >> 4)
 
 inline void PushToStack(uint8_t TmpRegister1, uint8_t TmpRegister2) {    /* Push a register pair to the stack */
   Register.SP -= 1;  /* decrement SP to update the Stack Point address */

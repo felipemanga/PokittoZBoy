@@ -890,7 +890,7 @@ int OP_0x76(){   /* HALT   HALTs the CPU until next interrupt */
   } else {
     PrintDebug("Halt [INTs are ON]");
   }
-  return 11;  /* that many CPU cycles should be spent on this instruction */
+  return 19;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x77(){   /* LD (HL),A   Load value of A into address at HL */
   PrintDebug("LD (HL),A");  /* DEBUG */
