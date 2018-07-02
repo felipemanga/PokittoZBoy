@@ -39,6 +39,8 @@ document.addEventListener("DOMContentLoaded", function(){
     document.body.addEventListener("dragover", cancelEvent);
     document.body.addEventListener("drop", dropFile);
 
+    let exp = document.getElementById("export");
+
     let pc = document.getElementById("palContainer");
     for( let name in palettes ){
 	let pe = document.createElement("li");
@@ -47,6 +49,28 @@ document.addEventListener("DOMContentLoaded", function(){
 	pe.onclick = loadPalette.bind( null, palettes[name] );
     }
 
+    [...document.querySelectorAll("input[type=color]")]
+	.forEach( el => el.onchange = _ => exp.style.display = "inline" );
+
+    exp.onclick = _ => {
+	
+	let c = [];
+	for( let i=0; i<16; ++i ){
+	    c[i] = '"' + document.getElementById("c" + map[i]).value + '"';
+	}
+
+	window.open("about:blank", "", "width=350,height=200,_blank").document.write( `
+{
+	"PALETTE_NAME":[
+		${c[0]}, ${c[1]}, ${c[2]}, ${c[3]},
+		${c[4]}, ${c[5]}, ${c[6]}, ${c[7]},
+		${c[8]}, ${c[9]}, ${c[10]}, ${c[11]},
+		${c[12]}, ${c[13]}, ${c[14]}, ${c[15]}
+	]
+}
+`.replace(/\n/g,'<br/>').replace(/\t/g, '&nbsp;&nbsp;') );
+	
+    };
 });
 
 function loadPalette( colors ){
