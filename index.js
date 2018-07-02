@@ -1,18 +1,64 @@
-document.addEventListener("DOMContentLoaded", function(){
-    document.body.addEventListener("dragenter", cancelEvent);
-    document.body.addEventListener("dragover", cancelEvent);
-    document.body.addEventListener("drop", dropFile);
-});
-
-function cancelEvent( event ){
-    event.stopPropagation();
-    event.preventDefault();
-}
 
 let pal = new Uint32Array(16);
 let pal8 = new Uint8Array(pal.buffer);
 
 let mappers = {};
+let palettes = {
+    "GBC Up":[
+	"#000000", "#833100", "#FFAD63", "#FFFFFF",
+	"#000000", "#833100", "#F7C4A5", "#FFFFFF",
+	"#000000", "#833100", "#FFAD63", "#FFFFFF",
+	"#000000", "#833100", "#FFAD63", "#FFFFFF"
+    ],
+
+    "GBC Up+A":[
+	"#000000", "#943A3A", "#FF8584", "#FFFFFF",
+	"#000000", "#E60000", "#FF8584", "#FFFFFF",
+	"#000000", "#008300", "#7BFF30", "#FFFFFF",
+	"#000000", "#0000FE", "#65A49B", "#FFFFFF"
+    ],
+
+    "GBC Up+B":[
+	"#5B3109", "#846B29", "#CE9C85", "#FFE7C5",
+	"#000000", "#6B5331", "#A58451", "#FFFFFF",
+	"#000000", "#833100", "#FFAD63", "#FFFFFF",
+	"#000000", "#833100", "#FFAD63", "#FFFFFF"
+    ]
+
+};
+
+let map = [
+    3,2,1,0,
+    15,14,13,12,
+    7,6,5,4,
+    11,10,9,8
+];
+
+document.addEventListener("DOMContentLoaded", function(){
+    document.body.addEventListener("dragenter", cancelEvent);
+    document.body.addEventListener("dragover", cancelEvent);
+    document.body.addEventListener("drop", dropFile);
+
+    let pc = document.getElementById("palContainer");
+    for( let name in palettes ){
+	let pe = document.createElement("li");
+	pe.textContent = name;
+	pc.appendChild( pe );
+	pe.onclick = loadPalette.bind( null, palettes[name] );
+    }
+
+});
+
+function loadPalette( colors ){
+    for( let i=0; i<16; ++i ){
+	document.getElementById("c" + map[i]).value = colors[i];
+    }
+}
+
+function cancelEvent( event ){
+    event.stopPropagation();
+    event.preventDefault();
+}
 
 fetch('mbc0.bin')
     .then( rsp => rsp.arrayBuffer() )
