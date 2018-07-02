@@ -17,15 +17,19 @@
 
       p{
       line-height: 1.5em;
+      margin: 0;
       }
 
       h1 {
       font-family: 'Galada', cursive;
+      margin: 0;
       }
 
       #out {
       background-color: #ABC;
-      float: right;
+      position: absolute;
+      top: 0;
+      right: 0;
       width: 160px;
       margin: 0;
       padding: 0;
@@ -39,7 +43,6 @@
       #boxContainer {
       position: relative;
       height: 100%;
-      pointer-events: none;
       }
 
       #box {
@@ -68,23 +71,39 @@
       }
 
     </style>
+    <script src="jszip.min.js"></script>
     <script src="index.js"></script>
   </head>
   <body>
-    
-    <ul id=out>
-    </ul>
-    
+        
     <div id=boxContainer>
       <div id=box>
 	<h1>PokittoZBoy</h1>
-	<p>Drop gameboy<br/> ROM (.gb)</br>HERE!</p>
+	<p>Drop gameboy<br/> ROM (.gb or .zip)</br>HERE!</p>
 	<p id=credits>
 	  <a href="http://zboy.sourceforge.net/" class=lightlink>Original</a> zBoy emulator by Mateusz Viste<br/>
 	  Port and optimization by Felipe Manga<br/>
 	</p>
+	<p>
+	  <span>BG</span>
+	  <input type="color" id="c3" value="#000000"><input type="color" id="c2" value="#222222"><input type="color" id="c1" value="#AAAAAA"><input type="color" id="c0" value="#FFFFFF">
+	</p>
+	<p>
+	  <span>FG</span>
+	  <input type="color" id="c15" value="#000000"><input type="color" id="c14" value="#222222"><input type="color" id="c13" value="#AAAAAA"><input type="color" id="c12" value="#FFFFFF">
+	</p>
+	<p>
+	  <span>S1</span>
+	  <input type="color" id="c7" value="#000000"><input type="color" id="c6" value="#222222"><input type="color" id="c5" value="#AAAAAA"><input type="color" id="c4" value="#FFFFFF">
+	</p>
+	<p>
+	  <span>S2</span>
+	  <input type="color" id="c11" value="#000000"><input type="color" id="c10" value="#222222"><input type="color" id="c9" value="#AAAAAA"><input type="color" id="c8" value="#FFFFFF">
+	</p>
       </div>
     </div>
+
+    <ul id=out></ul>
     
   </body>
 </html>
