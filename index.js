@@ -27,7 +27,7 @@ fetch('mbc1.bin')
 	mappers[1] = {
 	    bin:new Uint8Array(ab),
 	    offset:0x11f44,
-	    max: 0x28000
+	    max: 140*1024
 	};
     });
 
