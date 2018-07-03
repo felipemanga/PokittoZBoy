@@ -25,6 +25,11 @@ void indexRAM(){
     ramidx[i] = 6;  
 }
 
+inline uint8_t MemoryReadPC( int ReadAddr ){
+  PCBuffer = &RAMette[ ramidx[ReadAddr>>5] ][ ReadAddr ];
+  return *PCBuffer;
+}
+
 inline uint8_t MemoryRead(int ReadAddr) {
   return RAMette[ ramidx[ReadAddr>>5] ][ ReadAddr ];
   //   PrintDebug("MemoryRead 0x%04X\n", ReadAddr);

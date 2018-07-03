@@ -22,7 +22,7 @@ const uint8_t MemoryROM[] = {
 #include EMBEDROM
 };
 #else
-const uint8_t MemoryROM[160*1024] = {0};
+const uint8_t MemoryROM[140*1024] = {0xDE, 0xAD, 0xBE, 0xEF, 0x1, 0};
 #endif
 
 uint8_t _VideoRAM[0x2000];      /* Video RAM [8KiB] */
@@ -86,6 +86,8 @@ uint8_t * const RAMette[] = {
 
 
 uint8_t JoyRegA = 0, JoyRegB = 0, JoyOldReg;
+uint8_t *PCBuffer;
+
 
 uint8_t MemoryRead( int );
 

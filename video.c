@@ -50,7 +50,24 @@ inline uint8_t GetGbPalette(int PalAddr, uint8_t ColIdx) {
 }
 
 uint8_t framebuffer[160*4];
-uint32_t palette[16];
+const uint32_t palette[16] = {
+  0xEFBEADDE,
+  0x00000002,
+  0x11111111,
+  0x33333333,
+  0xEFBEADDE,
+  0x00000002,
+  0x11111111,
+  0x33333333,
+  0xEFBEADDE,
+  0x00000002,
+  0x11111111,
+  0x33333333,
+  0xEFBEADDE,
+  0x00000002,
+  0x11111111,
+  0x33333333
+};
 
 inline void setPixel( uint32_t x, uint32_t y, uint32_t col ){
 

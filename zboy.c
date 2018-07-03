@@ -207,15 +207,17 @@ int zboymain(int argc, char **argv) {
     partial += CpuExec();
     partial += CpuExec();
     partial += CpuExec();
+    partial += CpuExec();
     UsedCycles = partial;
     
     TotalCycles += UsedCycles;    /* Increment the global cycles counter */
     uTimer( UsedCycles );           /* Update uTimer */
     incDivider( UsedCycles );       /* Increment the DIV register */
-    CheckInterrupts();  /* Check if any interrupt has been requested since last time */
+    // if( doCheckInterrupts ) CheckInterrupts();  /* Check if any interrupt has been requested since last time */
 
     
     partial = 0;
+    partial += CpuExec();
     partial += CpuExec();
     partial += CpuExec();
     partial += CpuExec();
@@ -230,7 +232,7 @@ int zboymain(int argc, char **argv) {
     
     VideoSysUpdate(UsedCycles, &zboyparams);   /* Update Video subsystem */
     CheckJoypad(UsedCycles , &zboyparams);  /* Update the Joypad register */
-    CheckInterrupts();  /* Check if any interrupt has been requested since last time */
+    if( doCheckInterrupts ) CheckInterrupts();  /* Check if any interrupt has been requested since last time */
     
   }
 

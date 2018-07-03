@@ -67,15 +67,20 @@ inline void ResetFlagC(void) {
 
 inline void PushToStack(uint8_t TmpRegister1, uint8_t TmpRegister2) {    /* Push a register pair to the stack */
   Register.SP -= 1;  /* decrement SP to update the Stack Point address */
-  MemoryWrite(Register.SP, TmpRegister1);        /* Write the byte */
+  
+  MemoryInternalHiRAM[ Register.SP ] = TmpRegister1;
+  // MemoryWrite(Register.SP, TmpRegister1);        /* Write the byte */
+  
   Register.SP -= 1;  /* decrement SP to update the Stack Point address */
-  MemoryWrite(Register.SP, TmpRegister2);        /* Write the byte */
+  
+  // MemoryWrite(Register.SP, TmpRegister2);        /* Write the byte */
+  MemoryInternalHiRAM[ Register.SP ] = TmpRegister2;
 }
 
 inline void PopFromStack(uint8_t *popreg1, uint8_t *popreg2) {    /* Pop a register pair from the stack */
-  *popreg2 = MemoryRead(Register.SP);
+  *popreg2 = MemoryInternalHiRAM[ Register.SP ]; // MemoryRead(Register.SP);
   Register.SP++;
-  *popreg1 = MemoryRead(Register.SP);
+  *popreg1 = MemoryInternalHiRAM[ Register.SP ]; // MemoryRead(Register.SP);
   Register.SP++;
 }
 

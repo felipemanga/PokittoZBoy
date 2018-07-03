@@ -58,6 +58,14 @@ void indexRAM(){
   setBank(1);
 }
 
+inline uint8_t MemoryReadPC( int ReadAddr ){
+  int id = ramidx[ReadAddr>>5];
+  uint8_t *buffer = RAMette[ id ];
+  if( id==8 ) buffer += RomOffset;
+  PCBuffer = buffer + ReadAddr;
+  return *PCBuffer;
+}
+
 inline uint8_t MemoryRead(int ReadAddr) {
   int id = ramidx[ReadAddr>>5];
   uint8_t *buffer = RAMette[ id ];

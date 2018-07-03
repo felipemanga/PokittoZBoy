@@ -7,35 +7,23 @@
 struct CpuRegisters { /* Note: IX and IY have been removed from the GB Z80 clone */
   /* 8 bit registers */
   uint8_t A;   /* Accumulator */
-  union{
-    struct{
-      uint8_t B;   /* Commonly used as a 8bit counter */
-      uint8_t C;
-    };
-  };
-  union{
-    struct{
-      uint8_t D;
-      uint8_t E;
-    };
-  };
+  uint8_t B;   /* Commonly used as a 8bit counter */
+  uint8_t C;
+  uint8_t D;
+  uint8_t E;
   uint8_t F;   /* Flags */
-  union{
-    struct{
-      uint8_t H;
-      uint8_t L;
-    };
-    uint16_t HL;
-  };
+  uint8_t H;
+  uint8_t L;
   /*I AS UBYTE */  /* Interrupt vector register */
   /*R AS UBYTE */  /* Refresh register / might be used to generate random numbers */
   /* 16 bit register - Note: to write/read composite register, use dedicated functions! (eg. ReadRegAF) */
-  uint16_t PC;        /* Program counter (holds memory adress currently executed code). No function can change PC */
+  uint32_t PC;        /* Program counter (holds memory adress currently executed code). No function can change PC */
   uint16_t SP;        /* The stack pointer. Holds current address of the top of the stack */
 };
 
 struct CpuRegisters Register;
 
+int doCheckInterrupts = 0;
 int InterruptsState = 0;    /*  1 = ON  0 = OFF   (this is the IME register) */
 int HaltBug = 0;            /* used to emulate the "HALT bug" (using HLT when IME is 0) -> The Smurfs won't work without that! */
 int HaltState = 0;          /* 0 = CPU is running   1 = CPU is HALTed (wait until next interrupt) */
@@ -85,17 +73,23 @@ inline void CheckInterrupts(void) {
      IE: Interrupt Enable (0xFFFF)
      IF: Interrupt flag   (0xFF0F) */
   static uint8_t IrqTempState;
-  if ((InterruptsState == 0) && (HaltState == 0)) return;
+  
+  // if ((InterruptsState == 0) && (HaltState == 0)) return;
+  
   IrqTempState = (MemoryInternalHiRAM[0xFFFF] & IoRegisters[0xFF0F] & bx00011111);    /* IE AND IF, but only on 5 bits (because there are 5 INTs to monitor) */
   if (IrqTempState == 0) return; /* No interrupt to handle */
   if (HaltState == 1) {
     HaltState = 0;   /* If the CPU was HALTed, resume it, but DON'T touch interrupts if the CPU is in DI state! */
     if( !HaltBug )
       Register.PC++;
-    if (InterruptsState == 0) return; /* If interrupts are disabled, quit here. We don't want to handle them if they are off, just resume the HALT */
+    if (InterruptsState == 0) {
+      doCheckInterrupts = 0;
+      return; /* If interrupts are disabled, quit here. We don't want to handle them if they are off, just resume the HALT */
+    }
   }
   PushToStack16(Register.PC);            /* Save current address */
   InterruptsState = 0;   /*  Reset the IME flag   * this is MANDATORY! * */
+  doCheckInterrupts = 0;
   if ((IrqTempState & INT_VBLANK) != 0) {         /* V-Blank */
       PrintDebug("INT: VBLANK\n");
       Register.PC = 0x40;
@@ -126,7 +120,7 @@ int OP_0x00(){   /* NOP (No operation) */
 }
 int OP_0x01(){   /* LD BC,nn  (load nn into BC) */
   PrintDebug("LD BC,nn"); /* & HEX(DwordVal(UbyteBuff1, UbyteBuff2))); */ /* DEBUG */
-  WriteRegBC(MemoryRead(Register.PC + 2), MemoryRead(Register.PC + 1));
+  WriteRegBC(PCBuffer[2], PCBuffer[1]);
   Register.PC += 3;
   return 12;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -156,7 +150,7 @@ int OP_0x05(){   /* DEC B (register B-=1) */
 }
 int OP_0x06(){   /* LD B,n (load n into B) */
   PrintDebug("LD B,n");  /* DEBUG */
-  Register.B = MemoryRead(Register.PC + 1);
+  Register.B = PCBuffer[1];
   Register.PC += 2;
   return 8;
 }
@@ -167,9 +161,9 @@ int OP_0x07(){   /* RLCA (Rotate reg A left, old bit 7 written to Carry flag) */
   return 4;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x08(){   /* LD (nn),SP  (puts SP value at nn) */
-  /*MemoryWrite16(DwordVal(MemoryRead(Register.PC + 1),MemoryRead(Register.PC + 2)), Register.SP); */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
-  uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  /*MemoryWrite16(DwordVal(PCBuffer[1],PCBuffer[2]), Register.SP); */
+  uint8_t UbyteBuff1 = PCBuffer[1];
+  uint8_t UbyteBuff2 = PCBuffer[2];
   PrintDebug("LD (nn),SP"); /* & HEX(DwordVal(UbyteBuff1,UbyteBuff2)) & ",SP"); */
   MemoryWrite(DwordVal(UbyteBuff1,UbyteBuff2), (Register.SP & bx11111111));
   MemoryWrite(DwordVal(UbyteBuff1,UbyteBuff2) + 1, (Register.SP >> 8) & bx11111111);
@@ -208,7 +202,7 @@ int OP_0x0D(){   /* DEC C (register C-=1) */
 }
 int OP_0x0E(){   /* LD C,n (load n into C) */
   PrintDebug("LD C,n");  /* DEBUG */
-  Register.C = MemoryRead(Register.PC + 1);
+  Register.C = PCBuffer[1];
   Register.PC += 2;
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -223,8 +217,8 @@ int OP_0x10(){   /* STOP (opcode 10 00) */
   return 4;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x11(){   /* LD DE,nn  (load nn into DE) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
-  uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t UbyteBuff1 = PCBuffer[1];
+  uint8_t UbyteBuff2 = PCBuffer[2];
   PrintDebug("LD DE,nn"); /* & HEX(DwordVal(UbyteBuff1, UbyteBuff2))); */  /* DEBUG */
   WriteRegDE(UbyteBuff2, UbyteBuff1);
   Register.PC += 3;
@@ -256,7 +250,7 @@ int OP_0x15(){   /* DEC D (register D-=1) */
 }
 int OP_0x16(){   /* LD D,n (load n into D) */
   PrintDebug("LD D,n");  /* DEBUG */
-  Register.D = MemoryRead(Register.PC + 1);
+  Register.D = PCBuffer[1];
   Register.PC += 2;
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -268,10 +262,10 @@ int OP_0x17(){  /* RLA */
   return 4;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x18(){   /* JR n (jump to PC+n) */
-  Register.PC += 2;  /* First increment the PC, and then jump */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC - 1);
+  // Register.PC += 2;  /* First increment the PC, and then jump */
+  int8_t byteBuff1 = PCBuffer[1]; // MemoryRead(Register.PC - 1);
   PrintDebug("JR n"); /* & UbyteToByte(UbyteBuff1)) */ /* DEBUG */
-  Register.PC += UbyteToByte(UbyteBuff1);
+  Register.PC += 2 + ((int32_t)byteBuff1);
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x19(){   /* ADD HL,DE */
@@ -306,7 +300,7 @@ int OP_0x1D(){   /* DEC E (register E-=1) */
 }
 int OP_0x1E(){   /* LD E,n (load n into E) */
   PrintDebug("LD E,n");  /* DEBUG */
-  Register.E = MemoryRead(Register.PC + 1);
+  Register.E = PCBuffer[1];
   Register.PC += 2;
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -321,14 +315,14 @@ int OP_0x20(){   /* JR NZ,n (jump to PC+n if Z flag is false) */
   PrintDebug("JR NZ,n");  /* DEBUG */
   Register.PC += 2;  /* First increment the PC, and then we'll see */
   if (GetFlagZ() == 0) {
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC - 1);
+    uint8_t   UbyteBuff1 = PCBuffer[1];
     Register.PC += UbyteToByte(UbyteBuff1);
   }
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x21(){   /* LD HL,nn  (load nn into HL) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
-  uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t UbyteBuff1 = PCBuffer[1];
+  uint8_t UbyteBuff2 = PCBuffer[2];
   PrintDebug("LD HL,%04Xh", DwordVal(UbyteBuff1, UbyteBuff2)); /* & HEX(DwordVal(UbyteBuff1, UbyteBuff2))) */  /* DEBUG */
   WriteRegHL(UbyteBuff2, UbyteBuff1);
   Register.PC += 3;
@@ -361,7 +355,7 @@ int OP_0x25(){   /* DEC H (register H-=1) */
 }
 int OP_0x26(){   /* LD H,n (load n into H) */
   PrintDebug("LD H,n");  /* DEBUG */
-  Register.H = MemoryRead(Register.PC + 1);
+  Register.H = PCBuffer[1];
   Register.PC += 2;
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -375,7 +369,7 @@ int OP_0x28(){   /* JR Z,n (jump to PC+n if Z flag is true) */
   PrintDebug("JR Z,n");  /* DEBUG */
   Register.PC += 2;  /* First increment the PC, and then we'll see */
   if (GetFlagZ() == 1) {
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC - 1);
+    uint8_t   UbyteBuff1 = PCBuffer[1];
     Register.PC += UbyteToByte(UbyteBuff1);
   }
   return 8;  /* that many CPU cycles should be spent on this instruction */
@@ -413,7 +407,7 @@ int OP_0x2D(){   /* DEC L (register L-=1) */
 }
 int OP_0x2E(){   /* LD L,n (load n into L) */
   PrintDebug("LD L,n");  /* DEBUG */
-  Register.L = MemoryRead(Register.PC + 1);
+  Register.L = PCBuffer[1];
   Register.PC += 2;
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -429,14 +423,14 @@ int OP_0x30(){   /* JR NC,n (jump to PC+n if C flag is false) */
   PrintDebug("JR NC,n");  /* DEBUG */
   Register.PC += 2;  /* First increment the PC, and then we'll see */
   if (GetFlagC() == 0) {
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC - 1);
+    uint8_t   UbyteBuff1 = PCBuffer[1];
     Register.PC += UbyteToByte(UbyteBuff1);
   }
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x31(){   /* LD SP,nn */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
-  uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t UbyteBuff1 = PCBuffer[1];
+  uint8_t UbyteBuff2 = PCBuffer[2];
   PrintDebug("LD SP,%04X", DwordVal(UbyteBuff1, UbyteBuff2)); /* & HEX(DwordVal(UbyteBuff1, UbyteBuff2))) */  /* DEBUG */
   Register.SP = DwordVal(UbyteBuff1, UbyteBuff2);
   Register.PC += 3;
@@ -477,7 +471,7 @@ int OP_0x35(){   /* DEC (HL) -> (HL) -= 1 */
 }
 int OP_0x36(){   /* LD (HL),n */   /* Load value of n into address at HL */
   PrintDebug("LD (HL),n");  /* DEBUG */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   MemoryWrite(ReadRegHL(), UbyteBuff1);
   Register.PC += 2;
   return 12;  /* that many CPU cycles should be spent on this instruction */
@@ -494,7 +488,7 @@ int OP_0x38(){   /* JR C,n (jump to PC+n if C flag is true) */
   PrintDebug("JR C,n");  /* DEBUG */
   Register.PC += 2;  /* First increment the PC, and then we'll see */
   if (GetFlagC() == 1) {
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC - 1);
+    uint8_t   UbyteBuff1 = PCBuffer[1];
     Register.PC += UbyteToByte(UbyteBuff1);
   }
   return 8;  /* that many CPU cycles should be spent on this instruction */
@@ -535,7 +529,7 @@ int OP_0x3D(){   /* DEC A (register A-=1) */
   return 4;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x3E(){   /* LD A,n  (put n into A) */
-  Register.A = MemoryRead(Register.PC + 1);
+  Register.A = PCBuffer[1];
   PrintDebug("LD A,n"); /* & Register.A) */
   Register.PC += 2;
   return 8;  /* that many CPU cycles should be spent on this instruction */
@@ -1356,8 +1350,8 @@ int OP_0xC1(){   /* POP BC (Write the value in stack into BC) */
 int OP_0xC2(){   /* JP NZ,nn (jump if Z=0) */
   PrintDebug("JP NZ,nn");   /* DEBUG */
   if (GetFlagZ() == 0) {  /* Jump */
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC + 1);
-    uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t   UbyteBuff1 = PCBuffer[1];
+    uint8_t UbyteBuff2 = PCBuffer[2];
     Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   } else {   /* Don't jump */
     Register.PC += 3;
@@ -1366,8 +1360,8 @@ int OP_0xC2(){   /* JP NZ,nn (jump if Z=0) */
 }
 int OP_0xC3(){   /* JP nn (Unconditional jump) */
   PrintDebug("JP nn");   /* DEBUG */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
-  uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t UbyteBuff1 = PCBuffer[1];
+  uint8_t UbyteBuff2 = PCBuffer[2];
   Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   return 12;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -1375,8 +1369,8 @@ int OP_0xC4(){   /* CALL NZ,nn (call if Z=0) */
   PrintDebug("CALL NZ,nn");   /* DEBUG */
   if (GetFlagZ() == 0) {  /* Call */
     PushToStack16(Register.PC + 3);           /* First save the current value of the PC (+3 bytes) */
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC + 1);
-    uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t   UbyteBuff1 = PCBuffer[1];
+    uint8_t UbyteBuff2 = PCBuffer[2];
     Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   } else {   /* Don't call */
     Register.PC += 3;
@@ -1390,7 +1384,7 @@ int OP_0xC5(){   /* PUSH BC */
   return 16;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xC6(){  /* ADD A,n  (A+=n) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("ADD An"); /*," & HEX(UbyteBuff1, 2)) */
   AddToA(UbyteBuff1);
   Register.PC += 2;
@@ -1421,8 +1415,8 @@ int OP_0xCA(){   /* JP Z,nn (jump if Z=1) */
   if (GetFlagZ() == 0) {  /* Don't jump */
     Register.PC += 3;
   } else {   /* Jump */
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC + 1);
-    uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t   UbyteBuff1 = PCBuffer[1];
+    uint8_t UbyteBuff2 = PCBuffer[2];
     Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   }
   return 12;  /* that many CPU cycles should be spent on this instruction */
@@ -1434,22 +1428,22 @@ int OP_0xCC(){   /* CALL Z,nn (jump if Z=1) */
     Register.PC += 3;
   } else {  /* Jump */
     PushToStack16(Register.PC + 3);   /* First save the current value of the program counter (+3 bytes) */
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC + 1);
-    uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t   UbyteBuff1 = PCBuffer[1];
+    uint8_t UbyteBuff2 = PCBuffer[2];
     Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   }
   return 12;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xCD(){   /* CALL (calls a subroutine) */
   PushToStack16(Register.PC + 3);    /* First save the current value of the program counter (+3 bytes) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
-  uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t UbyteBuff1 = PCBuffer[1];
+  uint8_t UbyteBuff2 = PCBuffer[2];
   PrintDebug("CALL nn"); /* & HEX(DwordVal(UbyteBuff1, UbyteBuff2))) */ /* DEBUG */
   Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   return 12;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xCE(){   /* ADC A,n */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("ADC A,n"); /* & HEX(UbyteBuff1,2)) */   /* DEBUG */
   AdcA(UbyteBuff1);
   Register.PC += 2;
@@ -1479,8 +1473,8 @@ int OP_0xD1(){   /* POP DE (Write the value in stack into DE) */
 int OP_0xD2(){   /* JP NC,nn (jump if C=0) */
   PrintDebug("JP NC,nn");   /* DEBUG */
   if (GetFlagC() == 0) {  /* Jump */
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC + 1);
-    uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t   UbyteBuff1 = PCBuffer[1];
+    uint8_t UbyteBuff2 = PCBuffer[2];
     Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   } else {   /* Don't jump */
     Register.PC += 3;
@@ -1491,8 +1485,8 @@ int OP_0xD4(){   /* CALL NC,nn (jump if Z=0) */
   PrintDebug("CALL NC,nn");   /* DEBUG */
   if (GetFlagC() == 0) {  /* Jump */
     PushToStack16(Register.PC + 3);    /* First save the current value of the program counter (+3 bytes) */
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC + 1);
-    uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t   UbyteBuff1 = PCBuffer[1];
+    uint8_t UbyteBuff2 = PCBuffer[2];
     Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   } else {   /* Don't jump */
     Register.PC += 3;
@@ -1506,7 +1500,7 @@ int OP_0xD5(){   /* PUSH DE */
   return 16;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xD6(){  /* SUB n from A */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("SUB n"); /* & HEX(UbyteBuff1)) */  /* DEBUG */
   SubValFromReg8(&Register.A, &UbyteBuff1);
   Register.PC += 2;
@@ -1531,6 +1525,7 @@ int OP_0xD9(){   /* RETI  (RET + EI) */
   PrintDebug("RETI");   /* DEBUG */
   PopPCfromStack();           /* RET (return from a call or int) */
   InterruptsState = 1;        /* EI (enable interrupts) */
+  doCheckInterrupts = 1;
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xDA(){   /* JP C,nn (jump if C=1) */
@@ -1538,8 +1533,8 @@ int OP_0xDA(){   /* JP C,nn (jump if C=1) */
   if (GetFlagC() == 0) {  /* Don't jump */
     Register.PC += 3;
   } else {   /* Jump */
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC + 1);
-    uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t   UbyteBuff1 = PCBuffer[1];
+    uint8_t UbyteBuff2 = PCBuffer[2];
     Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   }
   return 12;  /* that many CPU cycles should be spent on this instruction */
@@ -1548,8 +1543,8 @@ int OP_0xDC(){   /* CALL C,nn (jump if Z=1) */
   PrintDebug("CALL C,nn");   /* DEBUG */
   if (GetFlagC() == 1) {  /* Jump */
     PushToStack16(Register.PC + 3);    /* First save the current value of the program counter (+3 bytes) */
-  uint8_t   UbyteBuff1 = MemoryRead(Register.PC + 1);
-    uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t   UbyteBuff1 = PCBuffer[1];
+    uint8_t UbyteBuff2 = PCBuffer[2];
     Register.PC = DwordVal(UbyteBuff1, UbyteBuff2);
   } else {   /* Don't jump */
     Register.PC += 3;
@@ -1557,7 +1552,7 @@ int OP_0xDC(){   /* CALL C,nn (jump if Z=1) */
   return 12;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xDE(){  /* SBC A,n */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("SBC A,n"); /* & UbyteBuff1) */  /* DEBUG */
   SbcA(UbyteBuff1);
   Register.PC += 2;
@@ -1570,7 +1565,7 @@ int OP_0xDF(){   /* RST 18h */
   return 32;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xE0(){   /* LD ($FF00+n),A */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("LD ($FF00+n)"); /* & HEX(UbyteBuff1, 2) & "),A"); */  /* DEBUG */
   MemoryWrite(0xFF00 + UbyteBuff1, Register.A);
   Register.PC += 2;
@@ -1595,7 +1590,7 @@ int OP_0xE5(){   /* PUSH HL */
   return 16;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xE6(){   /* A AND n */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("A AND n (n=0x%02X)", UbyteBuff1); /* & UbyteBuff1) */
   AndA(UbyteBuff1);
   Register.PC += 2;
@@ -1608,7 +1603,7 @@ int OP_0xE7(){   /* RST 20h */
   return 32;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xE8(){   /* ADD SP,n */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("ADD SP,n"); /* & UbyteToByte(UbyteBuff1)) */ /* DEBUG */
   AddToSP(UbyteToByte(UbyteBuff1));
   Register.PC += 2;
@@ -1620,15 +1615,15 @@ int OP_0xE9(){   /* JP (HL) / Jumps to address contained in HL (same as "LD PC,H
   return 4;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xEA(){   /* LD (nn),A   Load value of A into address nn */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
-  uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t UbyteBuff1 = PCBuffer[1];
+  uint8_t UbyteBuff2 = PCBuffer[2];
   PrintDebug("LD (nn),A"); /* & HEX(DwordVal(UbyteBuff1, UbyteBuff2)) & "),A"); */  /* DEBUG */
   MemoryWrite(DwordVal(UbyteBuff1, UbyteBuff2), Register.A);
   Register.PC += 3;
   return 16;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xEE(){   /* XOR n  (A = A XOR n) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("XOR n"); /* & HEX(UbyteBuff1, 2)) */ /* DEBUG */
   XorA(UbyteBuff1); /* Xor with A, result in A */
   Register.PC += 2;
@@ -1641,7 +1636,7 @@ int OP_0xEF(){   /* RST 28h */
   return 32;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xF0(){   /* LD A,($FF00+n) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("LD A,($FF00+n)"); /* & HEX(UbyteBuff1, 2) & ")"); */  /* DEBUG */
   Register.A = MemoryRead(0xFF00 | UbyteBuff1);
   Register.PC += 2;
@@ -1663,6 +1658,7 @@ int OP_0xF2(){   /* LD A,(FF00h+C)  (put value at address FF00+C into A) */
 int OP_0xF3(){   /* DI (Disables Interrupts) */
   PrintDebug("DI - Disables interrupts");  /* DEBUG */
   InterruptsState = 0;   /* Sets IME (Interrupts Master Enable) to 0 */
+  doCheckInterrupts = 0;
   Register.PC++;
   return 4;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -1673,7 +1669,7 @@ int OP_0xF5(){   /* PUSH AF */
   return 16;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xF6(){   /* OR n (A = A OR n) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("OR n"); /* & HEX(UbyteBuff1, 2)) */  /* DEBUG */
   OrA(UbyteBuff1);
   Register.PC += 2;
@@ -1686,7 +1682,7 @@ int OP_0xF7(){   /* RST 30h */
   return 32;     /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xF8(){   /* LD HL,SP+n */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   int8_t ByteBuff = UbyteToByte(UbyteBuff1);
   PrintDebug("LD HL,SP+n"); /* & ByteBuff) */
   uint16_t UintBuff = (Register.SP + ByteBuff);
@@ -1713,8 +1709,8 @@ int OP_0xF9(){   /* LD SP,HL  (put HL into SP) */
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xFA(){   /* LD A,nn  (put value from address nn to A) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
-  uint8_t UbyteBuff2 = MemoryRead(Register.PC + 2);
+  uint8_t UbyteBuff1 = PCBuffer[1];
+  uint8_t UbyteBuff2 = PCBuffer[2];
   PrintDebug("LD A,nn"); /* & HEX(DwordVal(UbyteBuff1, UbyteBuff2), 4)); */
   Register.A = MemoryRead(DwordVal(UbyteBuff1, UbyteBuff2));
   Register.PC += 3;
@@ -1723,11 +1719,12 @@ int OP_0xFA(){   /* LD A,nn  (put value from address nn to A) */
 int OP_0xFB(){   /* EI (Enables Interrupts) */
   PrintDebug("EI - Enables interrupts");  /* DEBUG */
   InterruptsState = 1;
+  doCheckInterrupts = 1;
   Register.PC++;
   return 4;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0xFE(){   /* CP n (compare A with n) */
-  uint8_t UbyteBuff1 = MemoryRead(Register.PC + 1);
+  uint8_t UbyteBuff1 = PCBuffer[1];
   PrintDebug("CP A,n"); /* & HEX(UbyteBuff1, 2)); */ /* DEBUG */
   CmpA(UbyteBuff1);
   Register.PC += 2;
@@ -3346,9 +3343,9 @@ const OP_T OP2[] = {
 };
 
 int OP_0xCB(){  /* Here we have a CBxx opcode... */
-  return OP2[ MemoryRead(Register.PC + 1) ]();
+  return OP2[ PCBuffer[1] ]();
 }
 
 inline int CpuExec(void) {
-  return OP[MemoryRead(Register.PC)]();
+  return OP[MemoryReadPC(Register.PC)]();
 }
