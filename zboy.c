@@ -198,6 +198,7 @@ int zboymain(int argc, char **argv) {
   // if (zboyparams.HiScoresMem != 0) LoadHiScoresMem();   /* Check out if need to look after hiscores */
 
   /* starting emulation... */
+
   
   while (QuitEmulator == 0) {
 
@@ -213,9 +214,7 @@ int zboymain(int argc, char **argv) {
     TotalCycles += UsedCycles;    /* Increment the global cycles counter */
     uTimer( UsedCycles );           /* Update uTimer */
     incDivider( UsedCycles );       /* Increment the DIV register */
-    // if( doCheckInterrupts ) CheckInterrupts();  /* Check if any interrupt has been requested since last time */
 
-    
     partial = 0;
     partial += CpuExec();
     partial += CpuExec();
@@ -232,7 +231,9 @@ int zboymain(int argc, char **argv) {
     
     VideoSysUpdate(UsedCycles, &zboyparams);   /* Update Video subsystem */
     CheckJoypad(UsedCycles , &zboyparams);  /* Update the Joypad register */
-    if( doCheckInterrupts ) CheckInterrupts();  /* Check if any interrupt has been requested since last time */
+
+    if ( InterruptsState || HaltState )
+      CheckInterrupts( &Register );
     
   }
 

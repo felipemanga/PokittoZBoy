@@ -147,9 +147,9 @@ unsigned long drv_getticks(void){
   return Pokitto::Core::getTime();
 }
 
-extern "C" void indexRAM();
+const uint16_t border[] = {0};
 
-extern "C" uint32_t palette[];
+extern "C" void indexRAM();
 
 int main () {
   
@@ -309,10 +309,9 @@ int main () {
 
 
   Pokitto::lcdClear();
-
   #ifdef SCALING
   Pokitto::setWindow( 0, 10, 176, 199+10 );
-  #else
+  #else  
   Pokitto::setWindow( 16, 30, 144+15, 159+30 );
   #endif
 

@@ -12,75 +12,100 @@ inline void WriteRegAF(x)
   Register.A = ((x >> 8) AND bx11111111)
 }
 */
-#define ReadRegAF() (DwordVal(Register.F, Register.A))
+// ZNHC0000
+inline int16_t ReadRegAF(){
+return (DwordVal(
+		 Register.FZ |
+		 Register.FN |
+		 Register.FH |
+		 Register.FC,
+		 Register.A));
+}
+
+inline int8_t ReadRegF(){
+  return Register.FZ |	
+    Register.FN |		
+    Register.FH |		
+    Register.FC;
+  
+}
+
+inline void WriteRegF(uint8_t f){
+  Register.FZ = f & ( 1 << 7 );
+  Register.FN = f & ( 1 << 6 );
+  Register.FH = f & ( 1 << 5 );
+  Register.FC = f & ( 1 << 4 );
+}
 
 inline void WriteRegBC(uint8_t x, uint8_t y) {
   Register.B = x;
   Register.C = y;
 }
-#define ReadRegBC() (DwordVal(Register.C, Register.B))
+inline int ReadRegBC(){ return (DwordVal(Register.C, Register.B)); }
 
 inline void WriteRegDE(uint8_t x, uint8_t y) {
   Register.D = x;
   Register.E = y;
 }
-#define ReadRegDE() (DwordVal(Register.E, Register.D))
+inline int ReadRegDE(){ return (DwordVal(Register.E, Register.D)); }
 
 inline void WriteRegHL(uint8_t x, uint8_t y) {
   Register.H = x;
   Register.L = y;
 }
-#define ReadRegHL() (DwordVal(Register.L, Register.H))
+inline int ReadRegHL(){ return (DwordVal(Register.L, Register.H)); }
 
 
 inline void SetFlagZ(void) { /* F struct: "ZNHC0000" */
-  Register.F |= bx10000000;
+  Register.FZ = 1<<7;// |= bx10000000;
 }
 inline void ResetFlagZ(void) {
-  Register.F &= bx01111111;
+  Register.FZ = 0;// &= bx01111111;
 }
-#define GetFlagZ() (Register.F>>7) // ((Register.F & bx10000000) >> 7)
+inline uint8_t GetFlagZ(){ return Register.FZ; } // ((Register.F & bx10000000) >> 7)
 
 inline void SetFlagN(void) { /* F struct: "ZNHC0000" */
-  Register.F |= bx01000000;
+  Register.FN = 1<<6;// |= bx01000000;
 }
 inline void ResetFlagN(void) {
-  Register.F &= bx10111111;
+  Register.FN = 0; // &= bx10111111;
 }
-#define GetFlagN() ((Register.F>>6)&1) // ((Register.F & bx01000000) >> 6)
+inline uint8_t GetFlagN(){ return Register.FN; } // ((Register.F & bx01000000) >> 6)
 
 inline void SetFlagH(void) { /* F struct: "ZNHC0000" */
-  Register.F |= bx00100000;
+  Register.FH = 1<<5;// |= bx00100000;
 }
 inline void ResetFlagH(void) {
-  Register.F &= bx11011111;
+  Register.FH = 0; // &= bx11011111;
 }
-#define GetFlagH() ((Register.F>>5)&1) // ((Register.F & bx00100000) >> 5)
+inline uint8_t GetFlagH(){ return Register.FH; } // ((Register.F & bx00100000) >> 5)
 
 inline void SetFlagC(void) { /* F struct: "ZNHC0000" */
-  Register.F |= bx00010000;
+  Register.FC = 1<<4; // |= bx00010000;
 }
 inline void ResetFlagC(void) {
-  Register.F &= bx11101111;
+  Register.FC = 0;// &= bx11101111;
 }
-#define GetFlagC() ((Register.F>>4)&1) // ((Register.F & bx00010000) >> 4)
+inline uint8_t GetFlagC(){ return Register.FC; } // ((Register.F & bx00010000) >> 4)
 
 inline void PushToStack(uint8_t TmpRegister1, uint8_t TmpRegister2) {    /* Push a register pair to the stack */
   Register.SP -= 1;  /* decrement SP to update the Stack Point address */
   
-  MemoryInternalHiRAM[ Register.SP ] = TmpRegister1;
-  // MemoryWrite(Register.SP, TmpRegister1);        /* Write the byte */
+  // MemoryInternalHiRAM[ Register.SP ] = TmpRegister1;
+  MemoryWrite(Register.SP, TmpRegister1);        /* Write the byte */
   
   Register.SP -= 1;  /* decrement SP to update the Stack Point address */
   
-  // MemoryWrite(Register.SP, TmpRegister2);        /* Write the byte */
-  MemoryInternalHiRAM[ Register.SP ] = TmpRegister2;
+  MemoryWrite(Register.SP, TmpRegister2);        /* Write the byte */
+  // MemoryInternalHiRAM[ Register.SP ] = TmpRegister2;
 }
 
 inline void PopFromStack(uint8_t *popreg1, uint8_t *popreg2) {    /* Pop a register pair from the stack */
-  *popreg2 = MemoryInternalHiRAM[ Register.SP ]; // MemoryRead(Register.SP);
+  // *popreg2 = MemoryInternalHiRAM[ Register.SP ]; //
+  *popreg2 = MemoryRead(Register.SP);
   Register.SP++;
-  *popreg1 = MemoryInternalHiRAM[ Register.SP ]; // MemoryRead(Register.SP);
+  //*popreg1 = MemoryInternalHiRAM[ Register.SP ];
+  *popreg1 =  MemoryRead(Register.SP);
   Register.SP++;
 }
 

@@ -71,7 +71,7 @@ void LoadGame(void) {
           Register.C = fgetc(FileHandler);
           Register.D = fgetc(FileHandler);
           Register.E = fgetc(FileHandler);
-          Register.F = fgetc(FileHandler);
+          WriteRegF( fgetc(FileHandler) );
           Register.H = fgetc(FileHandler);
           Register.L = fgetc(FileHandler);
           Register.PC = (fgetc(FileHandler) << 8);
@@ -150,7 +150,7 @@ void SaveGame(void) {
       fputc(Register.C, FileHandler);
       fputc(Register.D, FileHandler);
       fputc(Register.E, FileHandler);
-      fputc(Register.F, FileHandler);
+      fputc(ReadRegF(), FileHandler);
       fputc(Register.H, FileHandler);
       fputc(Register.L, FileHandler);
       fputc((Register.PC >> 8) & 0xFF, FileHandler);

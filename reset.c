@@ -51,7 +51,7 @@ void ResetEmulator(void) {  /* Resets all internal states of the emulator */
 
   MemoryInternalHiRAM[0xFFFF] = 0x00;  /* IE */
 
-  Register.F = 0;
+  WriteRegF(0); // Register.F = 0;
   SetFlagZ();      /* Set some flags */
   SetFlagH();      /* - as done by */
   SetFlagC();      /* the NO$CASH */

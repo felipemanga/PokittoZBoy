@@ -28,19 +28,20 @@
    Note: The content of the MBC1 RAM can be saved during poweroff if the cartridge comes with a battery.
 */
 
-uint32_t RomOffset;
+// uint32_t RomOffset;
 
 void setBank( int b ){
   CurRomBank = b;
-  RomOffset = (b<<14) - 0x4000;
+  // RomOffset = (b<<14) - 0x4000;
+  RAMette[0] = MemoryROM + (b<<14) - 0x4000;
 }
 
 void indexRAM(){
   int i=0;
   for(; i<0x4000>>5; i++ )
-    ramidx[i] = 0;
-  for(; i<0x8000>>5; i++ )
     ramidx[i] = 8;
+  for(; i<0x8000>>5; i++ )
+    ramidx[i] = 0;
   for(; i<0xA000>>5; i++ )
     ramidx[i] = 1;
   for(; i<0xC000>>5; i++ )
@@ -61,7 +62,7 @@ void indexRAM(){
 inline uint8_t MemoryReadPC( int ReadAddr ){
   int id = ramidx[ReadAddr>>5];
   uint8_t *buffer = RAMette[ id ];
-  if( id==8 ) buffer += RomOffset;
+  // if( !id ) buffer += RomOffset;
   PCBuffer = buffer + ReadAddr;
   return *PCBuffer;
 }
@@ -69,7 +70,7 @@ inline uint8_t MemoryReadPC( int ReadAddr ){
 inline uint8_t MemoryRead(int ReadAddr) {
   int id = ramidx[ReadAddr>>5];
   uint8_t *buffer = RAMette[ id ];
-  if( id==8 ) buffer += RomOffset;
+// if( !id ) buffer += RomOffset;
 
   return buffer[ ReadAddr ];
 

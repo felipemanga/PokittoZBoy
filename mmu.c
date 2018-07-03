@@ -72,7 +72,7 @@ void InitRAM(void) {  /* Init the RAM areas to random values, as in a real GameB
  * given MBC is called.                                                   */
 
 uint8_t * const ramidx = (uint8_t *) 0x20000000;
-uint8_t * const RAMette[] = {
+uint8_t * RAMette[] = {
   MemoryROM,
   _VideoRAM - 0x8000,
   _MemoryInternalRAM - 0xC000,
@@ -83,6 +83,7 @@ uint8_t * const RAMette[] = {
   _MemoryBankedRAM - 0xA000,
   MemoryROM
 };
+
 
 
 uint8_t JoyRegA = 0, JoyRegB = 0, JoyOldReg;
