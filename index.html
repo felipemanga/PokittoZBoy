@@ -34,7 +34,7 @@
       margin: 0;
       padding: 0;
       }
-
+      
       #out>li, #palContainer>li {
       padding: 10px 5px;
       border-bottom: 1px solid #234;
@@ -65,7 +65,7 @@
       background-color: #ABC;
       position: absolute;
       width: 320px;
-      height: 240px;
+      height: 255px;
       top: 0;
       left: 0;
       bottom: 0;
@@ -73,6 +73,11 @@
       margin: auto;
       }
 
+      #box.border {
+      padding: 100px;
+      background-size: 100%;
+      }
+      
       #credits {
       position: absolute;
       bottom: -20%;
@@ -129,7 +134,11 @@
     </div>
 
 
-    <ul id=palContainer></ul>
+    <ul id=palContainer>
+      <li>
+	<label>Border <select id="border"><option value="">Black</option></select></label>
+      </li>
+    </ul>
         
     <ul id=out></ul>
     
