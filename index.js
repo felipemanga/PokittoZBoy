@@ -847,12 +847,18 @@ let palettes = {
 	"#000000", "#312945", "#5e8db0", "#ffffff"
     ],
 
-
     "@Jonne - Sensible Soccer":[
 	"#ffffff", "#ffa935", "#239801", "#496239",
 	"#000000", "#e60000", "#ff8584", "#ffffff",
 	"#ffff00", "#803217", "#7bff30", "#ffffff",
 	"#000000", "#f06e0a", "#ffffff", "#ffffff"
+    ],
+
+    "@FManga - Asteroids":[
+	"#ecebeb", "#9da0a9", "#525363", "#14161c",
+	"#83fffd", "#66c3bc", "#2e5c59", "#0f1d1d",
+	"#78ffb4", "#50b080", "#2b513d", "#ffffff",
+	"#ff6f6f", "#b7595c", "#311818", "#ffffff"
     ]
 
 };
@@ -912,9 +918,14 @@ document.addEventListener("DOMContentLoaded", function(){
     };
 });
 
+let hasBorder = false;
+
 function changeBorder( evt ){
     let fileName = evt.target.value;
     let box = document.getElementById("box");
+
+    hasBorder = !!fileName;
+
     if( !fileName ){
 	borderP.fill(0x0000);
 	borderT.fill(0);
@@ -993,7 +1004,7 @@ function cancelEvent( event ){
 fetch('mbc0.bin?'+Math.random())
     .then( rsp => rsp.arrayBuffer() )
     .then( ab =>{
-	mappers[0] = {
+	mappers.b0 = {
 	    bin:new Uint8Array(ab),
 	    binOffset:0,
 	    palOffset:0,
@@ -1004,7 +1015,30 @@ fetch('mbc0.bin?'+Math.random())
 fetch('mbc1.bin?'+Math.random())
     .then( rsp => rsp.arrayBuffer() )
     .then( ab =>{
-	mappers[1] = {
+	mappers.b1 = {
+	    bin:new Uint8Array(ab),
+	    binOffset:0,
+	    palOffset:0,
+	    max: 128*1024
+	};
+    });
+
+
+fetch('mbc0s.bin?'+Math.random())
+    .then( rsp => rsp.arrayBuffer() )
+    .then( ab =>{
+	mappers.s0 = {
+	    bin:new Uint8Array(ab),
+	    binOffset:0,
+	    palOffset:0,
+	    max: 0x10000
+	};
+    });
+
+fetch('mbc1s.bin?'+Math.random())
+    .then( rsp => rsp.arrayBuffer() )
+    .then( ab =>{
+	mappers.s1 = {
 	    bin:new Uint8Array(ab),
 	    binOffset:0,
 	    palOffset:0,
@@ -1065,14 +1099,14 @@ function dropFile( event ){
 
     function process( ROM, name ){
 
-	let mapper = mappers[ ROM[0x147] ];
+	let mapper = mappers[ (hasBorder?'b':'s') + ROM[0x147] ];
 	
 	if( !mapper ){
 	    log( name + " bad mapper: " + ROM[0x147] );
 	    return;
 	}
 
-	if( ROM.length >= mapper.max ){
+	if( ROM.length > mapper.max ){
 	    log( name + " too big!" );
 	    return;		 
 	}
