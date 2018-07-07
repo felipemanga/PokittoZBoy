@@ -924,7 +924,7 @@ function changeBorder( evt ){
     let fileName = evt.target.value;
     let box = document.getElementById("box");
 
-    hasBorder = !!fileName;
+    hasBorder = false;
 
     if( !fileName ){
 	borderP.fill(0x0000);
@@ -952,6 +952,8 @@ canvas.height = 176;
 let ctx = canvas.getContext("2d");
 
 function loadBorders( img ){
+    hasBorder = true;
+
     ctx.drawImage( img, canvas.width/2 - img.width/2, canvas.height/2 - img.height/2 );
     let id = ctx.getImageData(0,0,220,176);
     let data = id.data;
