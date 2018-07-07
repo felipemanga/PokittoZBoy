@@ -1074,7 +1074,11 @@ function dropFile( event ){
 	
 	fr.onload = (function(fr, file){
 
-	    if( /.*\.json$/i.test(file.name) ){
+	    if( /.*\.png$/i.test(file.name) ){
+
+		parseBorder( fr.result );
+		
+	    }else if( /.*\.json$/i.test(file.name) ){
 
 		parseJSONPalette( fr.result );
 		
@@ -1099,6 +1103,18 @@ function dropFile( event ){
 	}).bind( null, fr, file );
 	
 	fr.readAsArrayBuffer( file );	
+    }
+
+    function parseBorder( borderab ){
+	let buf = new Uint8Array( borderab );
+	let url = URL.createObjectURL( new Blob([borderab], {type:'image/png'}) );
+	let box = document.getElementById("box");
+	box.classList.add("border");
+	box.style.backgroundImage = `url(${url})`;
+	
+	let img = new Image();
+	img.src = url;
+	img.onload = loadBorders.bind(null, img);	
     }
 
     function parseJSONPalette( palab ){
