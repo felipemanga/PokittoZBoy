@@ -1073,8 +1073,12 @@ function dropFile( event ){
 	let fr = new FileReader();
 	
 	fr.onload = (function(fr, file){
-	    
-	    if( /.*\.zip$/i.test(file.name) ){
+
+	    if( /.*\.json$/i.test(file.name) ){
+
+		parseJSONPalette( fr.result );
+		
+	    }else if( /.*\.zip$/i.test(file.name) ){
 		
 		JSZip.loadAsync( fr.result )
 		    .then( z => {
@@ -1095,6 +1099,26 @@ function dropFile( event ){
 	}).bind( null, fr, file );
 	
 	fr.readAsArrayBuffer( file );	
+    }
+
+    function parseJSONPalette( palab ){
+	let pal = '';
+	let palu8 = new Uint8Array( palab );
+	for( let i=0; i<palu8.length; ++i )
+	    pal += String.fromCharCode( palu8[i] );
+	pal = JSON.parse(pal);
+	loadPalette( pal[ Object.keys(pal)[0] ] );
+    }
+
+    function parsePal( palab ){
+	let pal = '';
+	let palu8 = new Uint8Array( palab );
+	for( let i=0; i<palu8.length; ++i )
+	    pal += String.fromCharCode( palu8[i] );
+	pal = pal.split("\n");
+	pal.shift();
+	pal.shift();
+	
     }
 
     function process( ROM, name ){
