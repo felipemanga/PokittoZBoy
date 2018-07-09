@@ -22,7 +22,7 @@ const uint8_t MemoryROM[] = {
 #include EMBEDROM
 };
 #else
-const uint8_t MemoryROM[140*1024] = {0xDE, 0xAD, 0xBE, 0xEF, 0x1, 0};
+const uint8_t MemoryROM[128*1024] = {0xDE, 0xAD, 0xBE, 0xEF, 0x1, 0};
 #endif
 
 uint8_t _VideoRAM[0x2000];      /* Video RAM [8KiB] */
@@ -33,7 +33,6 @@ uint8_t * const MemoryInternalHiRAM = _MemoryInternalHiRAM - 0xFF80;
 uint8_t * const VideoRAM = _VideoRAM - 0x8000;      /* Video RAM [8KiB] */
 uint8_t * const SpriteOAM = _SpriteOAM - 0xFE00;     /* Sprite OAM memory */
 uint8_t * const IoRegisters = _IoRegisters - 0xFF00;   /* All I/O memory-mapped registers */
-
 
 // uint8_t MemoryMAP[0x10000];    /* Regular memory (fallback for unmapped regions) */
 int Mbc1Model = MBC1_16_8;    /* MBC1 memory model (MbcModel can be 1 or 2)  1=16/8 ; 2=4/32 */
@@ -85,7 +84,7 @@ uint8_t * RAMette[9] = {
 };
 
 
-typedef void (*WriteHandlerT)( uint32_t, uint8_t d, uint8_t );
+typedef void (*WriteHandlerT)( uint32_t, uint8_t d, uint8_t * );
 extern const WriteHandlerT writeHandlers[];
 
 void NULLWrite( uint32_t addr, uint8_t data, uint8_t *bank ){}
@@ -103,7 +102,6 @@ inline void MemoryWrite(uint32_t WriteAddr, uint8_t DataHolder) {
   writeHandlers[ id ]( WriteAddr, DataHolder, RAMette[id] );
 }
 
-
 void RAMWrite( uint32_t WriteAddr, uint8_t DataHolder, uint8_t *buffer ){
     buffer[ WriteAddr ] = DataHolder;
 }
@@ -112,10 +110,9 @@ void RAMWrite( uint32_t WriteAddr, uint8_t DataHolder, uint8_t *buffer ){
 uint8_t JoyRegA = 0, JoyRegB = 0, JoyOldReg;
 // uint8_t *PCBuffer;
 
-
 uint8_t MemoryRead( int );
 
-inline void IOWrite(uint32_t WriteAddr, uint8_t DataHolder, uint8_t *buffer){
+inline void IOWrite(uint32_t WriteAddr, uint8_t DataHolder, uint8_t *IoRegisters){
 
   if (WriteAddr == 0xFF41) {                            /* STAT register: Do not allow to write into 2 last bits of the STAT */
     IoRegisters[0xFF41] = ((IoRegisters[0xFF41] & bx00000011) | (DataHolder & bx11111100)); /* register, as these bits are the mode flag. */

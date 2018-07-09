@@ -202,39 +202,23 @@ int zboymain(int argc, char **argv) {
   
   while (QuitEmulator == 0) {
 
-    /* */
-    int partial = CpuExec();
-    /*/
-    int partial = 0;
-    partial += CpuExec();
-    partial += CpuExec();
-    partial += CpuExec();
-    partial += CpuExec();
-    partial += CpuExec();
-    partial += CpuExec();
-    /* */
-    UsedCycles = partial;
+    UsedCycles = CpuExec();
     TotalCycles += UsedCycles;    /* Increment the global cycles counter */
     uTimer( UsedCycles );           /* Update uTimer */
     incDivider( UsedCycles );       /* Increment the DIV register */
 
-    /* */
-    partial = CpuExec();
-    /*/
-    int partial = 0;
-    partial += CpuExec();
-    partial += CpuExec();
-    partial += CpuExec();
-    partial += CpuExec();
-    partial += CpuExec();
-    partial += CpuExec();
-    /* */
+    if( HaltState ){
+      VideoSysUpdate(UsedCycles, &zboyparams);   /* Update Video subsystem */
+      CheckJoypad(UsedCycles , &zboyparams);  /* Update the Joypad register */
+      CheckInterrupts( &Register );
+      UsedCycles = 0;
+    }
+    
+    int partial = CpuExec();
     UsedCycles += partial;
-
     TotalCycles += partial;    /* Increment the global cycles counter */
     uTimer( partial );           /* Update uTimer */
     incDivider( partial );       /* Increment the DIV register */
-
     
     VideoSysUpdate(UsedCycles, &zboyparams);   /* Update Video subsystem */
     CheckJoypad(UsedCycles , &zboyparams);  /* Update the Joypad register */

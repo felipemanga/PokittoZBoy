@@ -882,7 +882,8 @@ int OP_0x76(uint8_t *PCBuffer, struct CpuRegisters *Register ){   /* HALT   HALT
   } else {
     PrintDebug("Halt [INTs are ON]");
   }
-  return 19;  /* that many CPU cycles should be spent on this instruction */
+  
+  return 15;  /* that many CPU cycles should be spent on this instruction */
 }
 int OP_0x77(uint8_t *PCBuffer, struct CpuRegisters *Register ){   /* LD (HL),A   Load value of A into address at HL */
   PrintDebug("LD (HL),A");  /* DEBUG */

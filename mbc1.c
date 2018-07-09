@@ -51,7 +51,7 @@ void indexRAM(){
   for(; i<0x10000>>5; i++ )
     ramidx[i] = 6;
   
-  RAMette[8] = MemoryROM + (CurRomBank<<14) - 0x4000;
+  RAMette[0] = MemoryROM + (CurRomBank<<14) - 0x4000;
 }
 
 
@@ -107,7 +107,7 @@ void MBC1Write( uint32_t memaddr, uint8_t DataByte, uint8_t *buffer ){
     }
   }
 
-  RAMette[8] = MemoryROM + (CurRomBank<<14) - 0x4000;
+  RAMette[0] = MemoryROM + (CurRomBank<<14) - 0x4000;
 
 }
 

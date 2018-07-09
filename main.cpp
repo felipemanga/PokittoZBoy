@@ -151,172 +151,89 @@ const uint16_t border[] = {0};
 
 extern "C" void indexRAM();
 
+#ifndef SCALING
+const uint16_t borderP[256] = {
+  0xadde,
+  0xefbe,
+  0x0007,
+  0x0000  
+};
+	      
+const uint8_t borderT[
+		       220*16
+] = {
+  0xDE,0xAD,
+  0xBE,0xEF,
+  0x03,0x00,
+  0x00,0x00,
+};
+
+const uint8_t borderB[
+		       220*16
+] = {
+  0xDE,0xAD,
+  0xBE,0xEF,
+  0x04,0x00,
+  0x00,0x00,
+};
+
+
+const uint8_t borderL[
+		       30*(176-16-16)
+] = {
+  0xDE,0xAD,
+  0xBE,0xEF,
+  0x05,0x00,
+  0x00,0x00,
+};
+
+const uint8_t borderR[
+		       30*(176-16-16)
+] = {
+  0xDE,0xAD,
+  0xBE,0xEF,
+  0x06,0x00,
+  0x00,0x00,
+};
+
+void blit( int x, int y, int w, int h, const uint8_t *p ){
+  Pokitto::setWindow( y, x, (y+h)-1, (x+w)-1 );
+  write_command_16(0x22);
+  CLR_CS_SET_CD_RD_WR;
+  int max = w*h;
+  for( int i=max; i; --i ){
+    LPC_GPIO_PORT->MPIN[2] = uint32_t( borderP[*p++] ) << 3; CLR_WR; SET_WR;      
+  }  
+}
+#endif
+
+
 int main () {
   
   Core::begin();
 
   char *args[] = {""};
   *reinterpret_cast<uint32_t *>(0x40048080) |= 3 << 26;
-
-  /* * Grayscale /
-  Display::palette[0] = Display::RGBto565( 0xFF, 0xFF, 0xFF );
-  Display::palette[1] = Display::RGBto565( 0xAA, 0xAA, 0xAA );
-  Display::palette[2] = Display::RGBto565( 0x55, 0x55, 0x55 );
-  Display::palette[3] = Display::RGBto565( 0x00, 0x00, 0x00 );
-  /*/
-
-  /* * Green Tint /
-  Display::palette[3] = Display::RGBto565( 0x24, 0x31, 0x37 );
-  Display::palette[2] = Display::RGBto565( 0x3f, 0x50, 0x3f );
-  Display::palette[1] = Display::RGBto565( 0x76, 0x84, 0x48 );
-  Display::palette[0] = Display::RGBto565( 0xac, 0xb5, 0x6b );
-  /*/
-
-  /* * /
-
-  palette[3] = uint32_t(Display::RGBto565( 0x33,0x2c,0x50 ))<<3;
-  palette[2] = uint32_t(Display::RGBto565( 0x46,0x87,0x8f ))<<3;
-  palette[1] = uint32_t(Display::RGBto565( 0x94,0xe3,0x44 ))<<3;
-  palette[0] = uint32_t(Display::RGBto565( 0xe2,0xf3,0xe4 ))<<3;
-
-  /* */
- 
-  /* DRMARIO */
-  #ifdef DRMARIOPALETTE
-  palette[ 7 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;
-  palette[ 6 ] = uint32_t(Display::RGBto565(95, 87, 79))<<3;
-  palette[ 5 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
-  palette[ 4 ] = uint32_t(Display::RGBto565(141, 173, 255))<<3;
-  // palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
-
-  palette[ 11 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
-  palette[ 10 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
-  palette[ 8 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
-  palette[ 9 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
-
-  palette[ 15 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
-  palette[ 14 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
-  palette[ 13 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
-  palette[ 12 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
-  
-  palette[ 3 ] = uint32_t(Display::RGBto565(29, 43, 83))<<3;
-  palette[ 2 ] = uint32_t(Display::RGBto565(171, 82, 54))<<3;
-  palette[ 1 ] = uint32_t(Display::RGBto565(131, 118, 156))<<3;
-  palette[ 0 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
-  /* */
-  #endif
-
-
-  #ifdef MARIOPALETTE
-  palette[ 7 ] = uint32_t(Display::RGBto565(255, 0, 0))<<3;
-  palette[ 6 ] = uint32_t(Display::RGBto565(0, 0, 255))<<3;
-  palette[ 5 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
-  palette[ 4 ] = uint32_t(Display::RGBto565(0xFA,0xAF,0x9A))<<3;
-
-  palette[ 11 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
-  palette[ 10 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
-  palette[ 8 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
-  palette[ 9 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
-
-  palette[ 15 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
-  palette[ 14 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
-  palette[ 13 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
-  palette[ 12 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
-  
-  palette[ 3 ] = uint32_t(Display::RGBto565(0x00,0x00,0x00))<<3;
-  palette[ 2 ] = uint32_t(Display::RGBto565(0x78,0x30,0x00))<<3;
-  palette[ 1 ] = uint32_t(Display::RGBto565(0xa8,0x60,0x00))<<3;
-  palette[ 0 ] = uint32_t(Display::RGBto565(0x48,0xa8,0xff))<<3;
-  /* */
-  #endif
-  
-  
-  #ifdef TETRISPALETTE
-  palette[ 15 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;
-  palette[ 14 ] = uint32_t(Display::RGBto565(95, 87, 79))<<3;
-  palette[ 13 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
-  palette[ 12 ] = uint32_t(Display::RGBto565(141, 173, 255))<<3;
-  // palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
-
-  palette[ 3 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
-  palette[ 2 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
-  palette[ 1 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
-  palette[ 0 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
-  
-  palette[ 7 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
-  palette[ 6 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
-  palette[ 5 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
-  palette[ 4 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
-  
-  palette[ 11 ] = uint32_t(Display::RGBto565(29, 43, 83))<<3;
-  palette[ 10 ] = uint32_t(Display::RGBto565(171, 82, 54))<<3;
-  palette[ 8 ] = uint32_t(Display::RGBto565(131, 118, 156))<<3;
-  palette[ 9 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
-  
-  #endif
-
-
-  #ifdef BBGHSTPALETTE
-  palette[ 15 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;
-  palette[ 14 ] = uint32_t(Display::RGBto565(95, 87, 79))<<3;
-  palette[ 13 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
-  palette[ 12 ] = uint32_t(Display::RGBto565(141, 173, 255))<<3;
-  // palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
-
-  palette[ 3 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
-  palette[ 2 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
-  palette[ 1 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
-  palette[ 0 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
-  
-  palette[ 11 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
-  palette[ 10 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
-  palette[ 8 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
-  palette[ 9 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
-  
-  palette[ 7 ] = uint32_t(Display::RGBto565(29, 43, 83))<<3;
-  palette[ 6 ] = uint32_t(Display::RGBto565(171, 82, 54))<<3;
-  palette[ 5 ] = uint32_t(Display::RGBto565(131, 118, 156))<<3;
-  palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
-  
-  #endif
-  
-
-  #ifdef TENNISPALETTE
-  palette[ 3 ] = uint32_t(Display::RGBto565(0, 0, 0))<<3;
-  palette[ 2 ] = uint32_t(Display::RGBto565(95, 87, 79))<<3;
-  palette[ 1 ] = uint32_t(Display::RGBto565(194, 195, 199))<<3;
-  palette[ 0 ] = uint32_t(Display::RGBto565(141, 173, 255))<<3;
-  // palette[ 4 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
-
-  palette[ 11 ] = uint32_t(Display::RGBto565(126, 37, 83))<<3;
-  palette[ 10 ] = uint32_t(Display::RGBto565(255, 0, 77))<<3;
-  palette[ 8 ] = uint32_t(Display::RGBto565(255, 119, 168))<<3;
-  palette[ 9 ] = uint32_t(Display::RGBto565(255, 204, 170))<<3;
-  
-  palette[ 15 ] = uint32_t(Display::RGBto565(0, 135, 81))<<3;
-  palette[ 14 ] = uint32_t(Display::RGBto565(255, 163, 0))<<3;
-  palette[ 13 ] = uint32_t(Display::RGBto565(0, 228, 54))<<3;
-  palette[ 12 ] = uint32_t(Display::RGBto565(255, 236, 39))<<3;
-  
-  palette[ 4 ] = uint32_t(Display::RGBto565(29, 43, 83))<<3;
-  palette[ 7 ] = uint32_t(Display::RGBto565(171, 82, 54))<<3;
-  palette[ 6 ] = uint32_t(Display::RGBto565(131, 118, 156))<<3;
-  palette[ 5 ] = uint32_t(Display::RGBto565(255, 241, 232))<<3;
-  
-  #endif
   
   indexRAM();
 
-
-  Pokitto::lcdClear();
-  #ifdef SCALING
-  Pokitto::setWindow( 0, 10, 176, 199+10 );
-  #else  
-  Pokitto::setWindow( 16, 30, 144+15, 159+30 );
-  #endif
-
   SET_MASK_P2;
   write_command_16(0x03); write_data_16(0x1038);
+  
+  #ifdef SCALING
+  Pokitto::lcdClear();
+  Pokitto::setWindow( 0, 10, 176, 199+10 );
+  #else
+
+  blit( 0, 0, 220, 16, borderT );
+  blit( 0, 176-16, 220, 16, borderB );
+  blit( 0, 16, 30, 176-16-16, borderL );
+  blit( 160+30, 16, 30, 176-16-16, borderR );
+  
+  Pokitto::setWindow( 16, 30, 144+15, 159+30 );
+  
+  #endif
+
   write_command_16(0x22);
   CLR_CS_SET_CD_RD_WR;
 
