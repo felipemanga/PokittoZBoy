@@ -19,6 +19,7 @@ struct CpuRegisters { /* Note: IX and IY have been removed from the GB Z80 clone
   /* 16 bit register - Note: to write/read composite register, use dedicated functions! (eg. ReadRegAF) */
   uint32_t PC;        /* Program counter (holds memory adress currently executed code). No function can change PC */
   uint16_t SP;        /* The stack pointer. Holds current address of the top of the stack */
+  uint8_t *SPBlock;
 };
 
 struct CpuRegisters Register;
@@ -429,6 +430,7 @@ int OP_0x31(uint8_t *PCBuffer, struct CpuRegisters *Register ){   /* LD SP,nn */
   uint8_t UbyteBuff2 = PCBuffer[2];
   PrintDebug("LD SP,%04X", DwordVal(UbyteBuff1, UbyteBuff2)); /* & HEX(DwordVal(UbyteBuff1, UbyteBuff2))) */  /* DEBUG */
   Register->SP = DwordVal(UbyteBuff1, UbyteBuff2);
+  Register->SPBlock = getMemoryBlock( Register->SP );
   Register->PC += 3;
   return 12;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -1703,6 +1705,7 @@ int OP_0xF8(uint8_t *PCBuffer, struct CpuRegisters *Register ){   /* LD HL,SP+n 
 int OP_0xF9(uint8_t *PCBuffer, struct CpuRegisters *Register ){   /* LD SP,HL  (put HL into SP) */
   PrintDebug("LD SP,HL");
   Register->SP = ReadRegHL();
+  Register->SPBlock = getMemoryBlock( Register->SP );
   Register->PC = Register->PC+1;
   return 8;  /* that many CPU cycles should be spent on this instruction */
 }
@@ -3345,7 +3348,30 @@ int OP_0xCB(uint8_t *PCBuffer, struct CpuRegisters *Register ){  /* Here we have
 }
 
 inline int CpuExec(void) {
-  uint8_t op = MemoryReadPC(Register.PC);
-  return OP[op]( PCBuffer, &Register );
+  uint8_t *PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
+  int cycles = OP[PCBuffer[0]]( PCBuffer, &Register );
+  
+  PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
+  cycles += OP[PCBuffer[0]]( PCBuffer, &Register );
+  
+  PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
+  cycles += OP[PCBuffer[0]]( PCBuffer, &Register );
+
+  PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
+  cycles += OP[PCBuffer[0]]( PCBuffer, &Register );
+  
+  PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
+  cycles += OP[PCBuffer[0]]( PCBuffer, &Register );
+
+  PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
+  cycles += OP[PCBuffer[0]]( PCBuffer, &Register );
+  
+  PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
+  cycles += OP[PCBuffer[0]]( PCBuffer, &Register );
+
+  PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
+  cycles += OP[PCBuffer[0]]( PCBuffer, &Register );
+
+  return cycles;
 }
 

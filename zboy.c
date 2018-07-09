@@ -202,6 +202,9 @@ int zboymain(int argc, char **argv) {
   
   while (QuitEmulator == 0) {
 
+    /* */
+    int partial = CpuExec();
+    /*/
     int partial = 0;
     partial += CpuExec();
     partial += CpuExec();
@@ -209,19 +212,23 @@ int zboymain(int argc, char **argv) {
     partial += CpuExec();
     partial += CpuExec();
     partial += CpuExec();
+    /* */
     UsedCycles = partial;
-    
     TotalCycles += UsedCycles;    /* Increment the global cycles counter */
     uTimer( UsedCycles );           /* Update uTimer */
     incDivider( UsedCycles );       /* Increment the DIV register */
 
-    partial = 0;
+    /* */
+    partial = CpuExec();
+    /*/
+    int partial = 0;
     partial += CpuExec();
     partial += CpuExec();
     partial += CpuExec();
     partial += CpuExec();
     partial += CpuExec();
     partial += CpuExec();
+    /* */
     UsedCycles += partial;
 
     TotalCycles += partial;    /* Increment the global cycles counter */

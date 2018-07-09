@@ -72,7 +72,7 @@ void InitRAM(void) {  /* Init the RAM areas to random values, as in a real GameB
  * given MBC is called.                                                   */
 
 uint8_t * const ramidx = (uint8_t *) 0x20000000;
-uint8_t * RAMette[] = {
+uint8_t * RAMette[9] = {
   MemoryROM,
   _VideoRAM - 0x8000,
   _MemoryInternalRAM - 0xC000,
@@ -85,14 +85,37 @@ uint8_t * RAMette[] = {
 };
 
 
+typedef void (*WriteHandlerT)( uint32_t, uint8_t d, uint8_t );
+extern const WriteHandlerT writeHandlers[];
+
+void NULLWrite( uint32_t addr, uint8_t data, uint8_t *bank ){}
+
+inline uint8_t *getMemoryBlock( int ReadAddr ){
+  return RAMette[ ramidx[ReadAddr>>5] ];
+}
+
+inline uint8_t MemoryRead(int ReadAddr) {
+  return RAMette[ ramidx[ReadAddr>>5] ][ ReadAddr ];
+}
+
+inline void MemoryWrite(uint32_t WriteAddr, uint8_t DataHolder) {
+  int id = ramidx[WriteAddr>>5];
+  writeHandlers[ id ]( WriteAddr, DataHolder, RAMette[id] );
+}
+
+
+void RAMWrite( uint32_t WriteAddr, uint8_t DataHolder, uint8_t *buffer ){
+    buffer[ WriteAddr ] = DataHolder;
+}
+
 
 uint8_t JoyRegA = 0, JoyRegB = 0, JoyOldReg;
-uint8_t *PCBuffer;
+// uint8_t *PCBuffer;
 
 
 uint8_t MemoryRead( int );
 
-inline void IOWrite(uint32_t WriteAddr, uint8_t DataHolder){
+inline void IOWrite(uint32_t WriteAddr, uint8_t DataHolder, uint8_t *buffer){
 
   if (WriteAddr == 0xFF41) {                            /* STAT register: Do not allow to write into 2 last bits of the STAT */
     IoRegisters[0xFF41] = ((IoRegisters[0xFF41] & bx00000011) | (DataHolder & bx11111100)); /* register, as these bits are the mode flag. */

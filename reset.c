@@ -15,6 +15,8 @@ void ResetEmulator(void) {  /* Resets all internal states of the emulator */
   WriteRegDE(00, 0xD8);  /* 00D8h */
   WriteRegHL(01, 0x4D);  /* 014Dh */
   Register.SP = 0xFFFE;  /* Stack pointer is inited at &hFFFE */
+  Register.SPBlock = getMemoryBlock( Register.SP );
+
   IoRegisters[0xFF05] = 0x00;   /* TIMA */
   IoRegisters[0xFF06] = 0x00;   /* TMA */
   IoRegisters[0xFF07] = 0x00;   /* TAC */
