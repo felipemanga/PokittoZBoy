@@ -5,7 +5,8 @@ let borderL = new Uint8Array( 30*(176-16-16) );
 let borderR = new Uint8Array( 30*(176-16-16) );
 
 let borders = 
-`  abugs.png
+` black.png
+  abugs.png
   advlolo.png
   akazukin.png
   aladdin.png
