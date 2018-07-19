@@ -864,6 +864,13 @@ let palettes = {
 	"#000000", "#3a1abd", "#f00000", "#ffffff"
     ],
 
+    "@Jonne - Turrican":[
+	"#000000", "#00a404", "#ff0000", "#ffdc17",
+	"#ff8000", "#91db88", "#272727", "#000000",
+	"#b13eff", "#000000", "#ffff80", "#ff8000",
+	"#53ff09", "#f06e0a", "#ffffff", "#ffffff"
+    ],
+
     "@FManga - Asteroids":[
 	"#ecebeb", "#9da0a9", "#525363", "#14161c",
 	"#83fffd", "#66c3bc", "#2e5c59", "#0f1d1d",
