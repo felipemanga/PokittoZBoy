@@ -6,6 +6,8 @@ let borderR = new Uint8Array( 30*(176-16-16) );
 
 let borders = 
 ` black.png
+  jonne-castlevania-ii.png
+  jonne-prince_of_persia.png
   abugs.png
   advlolo.png
   akazukin.png
@@ -853,6 +855,13 @@ let palettes = {
 	"#000000", "#e60000", "#ff8584", "#ffffff",
 	"#ffff00", "#803217", "#7bff30", "#ffffff",
 	"#000000", "#f06e0a", "#ffffff", "#ffffff"
+    ],
+
+    "@Jonne - Castlevania II":[
+	"#cc96d3", "#435443", "#9e2589", "#0a0d14",
+	"#cc96d3", "#37338e", "#9e2589", "#0a0d14",
+	"#000000", "#222222", "#169a73", "#ffb0d8",
+	"#000000", "#3a1abd", "#f00000", "#ffffff"
     ],
 
     "@FManga - Asteroids":[
