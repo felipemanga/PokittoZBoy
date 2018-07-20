@@ -871,11 +871,25 @@ let palettes = {
 	"#53ff09", "#f06e0a", "#ffffff", "#ffffff"
     ],
 
+    "@Jonne - Super Mario Land":[
+	"#00530b", "#ff3300", "#ffff75", "#41b7fe",
+	"#000000", "#ffff00", "#c46200", "#ffffff",
+	"#bf0202", "#ff0000", "#fde2d7", "#ffffff",
+	"#000000", "#f06e0a", "#ffffff", "#ffffff"
+    ],
+
     "@FManga - Asteroids":[
 	"#ecebeb", "#9da0a9", "#525363", "#14161c",
 	"#83fffd", "#66c3bc", "#2e5c59", "#0f1d1d",
 	"#78ffb4", "#50b080", "#2b513d", "#ffffff",
 	"#ff6f6f", "#b7595c", "#311818", "#ffffff"
+    ],
+
+    "@FManga - Dig Dug":[
+	"#463b19", "#695a2d", "#b19e65", "#eddcaa",
+	"#000000", "#e60000", "#ff8584", "#ffffff",
+	"#000000", "#008300", "#b19e65", "#ffffff",
+	"#000000", "#fe1f00", "#fff600", "#ffffff"
     ]
 
 };
@@ -894,13 +908,14 @@ document.addEventListener("DOMContentLoaded", function(){
 
     let exp = document.getElementById("export");
     let bs = document.getElementById("border");
-    let pc = document.getElementById("palContainer");
+    let pc = document.getElementById("colors");
     for( let name in palettes ){
-	let pe = document.createElement("li");
+	let pe = document.createElement("option");
 	pe.textContent = name;
+	pe.value = name;
 	pc.appendChild( pe );
-	pe.onclick = loadPalette.bind( null, palettes[name] );
     }
+    pc.onchange = _ => loadPalette( palettes[ pc.value ] );
 
     [...document.querySelectorAll("input[type=color]")]
 	.forEach( el => el.onchange = _ => exp.style.display = "inline" );
@@ -1160,16 +1175,16 @@ function dropFile( event ){
 
 	let mapper = mappers[ (hasBorder?'b':'s') + ROM[0x147] ];
 	
-	if( !mapper ){
-	    log( name + " bad mapper: " + ROM[0x147] );
-	    return;
-	}
-
 	if( ROM.length > mapper.max ){
 	    log( name + " too big!" );
 	    return;		 
 	}
 
+	if( !mapper ){
+	    log( name + " bad mapper: " + ROM[0x147] );
+	    return;
+	}
+	
 	if( !mapper.binOffset ){
 	    let u32 = new Uint32Array( mapper.bin.buffer );
 	    let found = 0;
