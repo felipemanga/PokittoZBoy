@@ -1178,7 +1178,10 @@ function dropFile( event ){
 
     function process( ROM, name ){
 
-	let mapper = mappers[ (hasBorder?'b':'s') + ROM[0x147] ];
+	let mapperId = ROM[0x147];
+	if( mapperId == 6 ) mapperId = 1;
+
+	let mapper = mappers[ (hasBorder?'b':'s') + mapperId ];
 	
 	if( !mapper ){
 	    log( name + " bad mapper: " + ROM[0x147] );
