@@ -884,12 +884,17 @@ let palettes = {
 	"#78ffb4", "#50b080", "#2b513d", "#ffffff",
 	"#ff6f6f", "#b7595c", "#311818", "#ffffff"
     ],
-
     "@FManga - Dig Dug":[
 	"#463b19", "#695a2d", "#b19e65", "#eddcaa",
 	"#000000", "#e60000", "#ff8584", "#ffffff",
 	"#000000", "#008300", "#b19e65", "#ffffff",
 	"#000000", "#fe1f00", "#fff600", "#ffffff"
+    ],
+    "@FManga - Bubble Bobble":[
+	"#29003c", "#9a7400", "#ff974a", "#ffe4bb",
+	"#000000", "#0072d6", "#1f9dff", "#fffaca",
+	"#29003c", "#6000ba", "#ac53ff", "#ffffff",
+	"#005189", "#227fc0", "#73c6ff", "#ffffff"
     ]
 
 };
@@ -1175,14 +1180,14 @@ function dropFile( event ){
 
 	let mapper = mappers[ (hasBorder?'b':'s') + ROM[0x147] ];
 	
-	if( ROM.length > mapper.max ){
-	    log( name + " too big!" );
-	    return;		 
-	}
-
 	if( !mapper ){
 	    log( name + " bad mapper: " + ROM[0x147] );
 	    return;
+	}
+
+	if( ROM.length > mapper.max ){
+	    log( name + " too big!" );
+	    return;		 
 	}
 	
 	if( !mapper.binOffset ){
