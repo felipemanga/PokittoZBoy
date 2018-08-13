@@ -31,10 +31,10 @@ struct KeyStateMap {  /* Used for internal monitoring of key states */
 
 struct KeyStateMap KeyState;
 
-
+/*
 int zboyScancodeToBackendScancode(char *zboyScanCode, int *iflag) {
   if (strcasecmp(zboyScanCode, "none") == 0) return(DRV_INPUT_NONE);
-  /* KEYBOARD */
+
   if (strcasecmp(zboyScanCode, "kb.f1") == 0) return(DRV_INPUT_KEY_F1);
   if (strcasecmp(zboyScanCode, "kb.f2") == 0) return(DRV_INPUT_KEY_F2);
   if (strcasecmp(zboyScanCode, "kb.f3") == 0) return(DRV_INPUT_KEY_F3);
@@ -107,8 +107,8 @@ int zboyScancodeToBackendScancode(char *zboyScanCode, int *iflag) {
   if (strcasecmp(zboyScanCode, "kb.7") == 0) return(DRV_INPUT_KEY_7);
   if (strcasecmp(zboyScanCode, "kb.8") == 0) return(DRV_INPUT_KEY_8);
   if (strcasecmp(zboyScanCode, "kb.9") == 0) return(DRV_INPUT_KEY_9);
-  /* JOYPAD - if it seems to match, set a flag */
-  if (strcasecmp(zboyScanCode, "joy.a1pos") == 0) return(DRV_INPUT_JOYAX_1POS);
+
+if (strcasecmp(zboyScanCode, "joy.a1pos") == 0) return(DRV_INPUT_JOYAX_1POS);
   if (strcasecmp(zboyScanCode, "joy.a1neg") == 0) return(DRV_INPUT_JOYAX_1NEG);
   if (strcasecmp(zboyScanCode, "joy.a2pos") == 0) return(DRV_INPUT_JOYAX_2POS);
   if (strcasecmp(zboyScanCode, "joy.a2neg") == 0) return(DRV_INPUT_JOYAX_2NEG);
@@ -132,11 +132,10 @@ int zboyScancodeToBackendScancode(char *zboyScanCode, int *iflag) {
   if (strcasecmp(zboyScanCode, "joy.b14") == 0) return(DRV_INPUT_JOY_14);
   if (strcasecmp(zboyScanCode, "joy.b15") == 0) return(DRV_INPUT_JOY_15);
   if (strcasecmp(zboyScanCode, "joy.b16") == 0) return(DRV_INPUT_JOY_16);
-  /* nothing matched -- this is an error condition */
   *iflag |= IFLAG_ERROR;
   return(DRV_INPUT_NONE);
 }
-
+*/
 
 #define DownIsPressed(); \
   if (KeyState.Down == 0) { \
@@ -343,10 +342,12 @@ inline void CheckJoypad( uint32_t cycles, struct zboyparamstype *zboyparams) {
 	  ButtonSprctrlIsReleased();
 	  } else if (drv_event_getval(event) == zboyparams->key_wind) { /* F3 * /
 	  ButtonWinctrlIsReleased();
-	  } else if (drv_event_getval(event) == zboyparams->key_save) { /* F5 * /
-	  // ButtonSaveIsReleased();
-	  } else if (drv_event_getval(event) == zboyparams->key_load) { /* F7 * /
-	  // ButtonLoadIsReleased();
+	*/
+      } else if (drv_event_getval(event) == zboyparams->key_save) { /* F5 */
+	  ButtonSaveIsReleased();
+      } else if (drv_event_getval(event) == zboyparams->key_load) { /* F7 */
+	  ButtonLoadIsReleased();
+	  /*
 	  } else if (drv_event_getval(event) == zboyparams->key_asht) { /* F8 * /
 	  ButtonAutoscreenshotIsReleased();
 	  } else if (drv_event_getval(event) == zboyparams->key_shot) { /* F9 * /

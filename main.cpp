@@ -3,10 +3,13 @@
 
 using namespace Pokitto;
 
+#include "save.hpp"
+
 extern "C" {
 #include "drv.h"
 
-  
+
+void __wrap_free(void *){}
 
 void write_command_16(uint16_t data)
 {
@@ -45,6 +48,20 @@ extern "C" int drv_init(int screenwidth, int screenheight, int joyid){
   // framebuffer = Pokitto::Display::screenbuffer;
   return 0;
 }
+
+extern "C" void SetUserMsg(char *msg) {
+  Pokitto::setWindow( 0, 0, 176, 220 );
+    Pokitto::Display::enableDirectPrinting(true);
+    Pokitto::Display::setCursor(1, 1);
+    Pokitto::Display::print(msg);
+  #ifdef SCALING
+  Pokitto::setWindow( 0, 10, 176, 199+10 );
+  #else
+  Pokitto::setWindow( 16, 30, 144+15, 159+30 );
+  #endif
+  wait_ms(1000);
+}
+
 
 uint32_t prevTime;
 extern uint32_t frameCount;
@@ -87,10 +104,16 @@ int drv_keypoll(void){
 
   if( (changes & (1<<CBIT)) && !(reported & (1<<CBIT)) ){
     reported |= 1<<CBIT;
+    uint32_t btn = DRV_INPUT_KEY_RET;
+    if( Buttons::buttons_state & (1<<ABIT) ){
+	btn = DRV_INPUT_KEY_F5;
+    }else if( Buttons::buttons_state & (1<<BBIT) ){
+	btn = DRV_INPUT_KEY_F7;
+    }
     if( Buttons::buttons_state & (1<<CBIT) )
-      return DRV_INPUT_KEYDOWN | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_RET;
+      return DRV_INPUT_KEYDOWN | DRV_INPUT_KEYBOARD | btn;
     else 
-      return DRV_INPUT_KEYUP | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_RET;
+      return DRV_INPUT_KEYUP | DRV_INPUT_KEYBOARD | btn;
   }
 
   if( (changes & (1<<ABIT)) && !(reported & (1<<ABIT)) ){
@@ -110,11 +133,12 @@ int drv_keypoll(void){
   }
 
   if( (changes & (1<<7)) && !(reported & (1<<7)) ){
-    reported |= 1<<7;
-    if( selectbtn )
-      return DRV_INPUT_KEYDOWN | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_TAB;
-    else 
-      return DRV_INPUT_KEYUP | DRV_INPUT_KEYBOARD | DRV_INPUT_KEY_TAB;
+      reported |= 1<<7;
+      uint32_t btn = DRV_INPUT_KEY_TAB;
+      if( selectbtn )
+	  return DRV_INPUT_KEYDOWN | DRV_INPUT_KEYBOARD | btn;
+      else 
+	  return DRV_INPUT_KEYUP | DRV_INPUT_KEYBOARD | btn;
   }
   
   reported = 0;
@@ -134,6 +158,7 @@ int drv_keypoll(void){
   return DRV_INPUT_NONE;
   
 }
+
 
 /* loads a palette of colors into zBoy. *palette must be an array of at least
  * 256 color values written in 32bits each as RGB triplets */
@@ -211,6 +236,8 @@ void blit( int x, int y, int w, int h, const uint8_t *p ){
 int main () {
   
   Core::begin();
+
+  pokInitSD();
 
   char *args[] = {""};
   *reinterpret_cast<uint32_t *>(0x40048080) |= 3 << 26;

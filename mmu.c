@@ -18,7 +18,7 @@ uint8_t _MemoryBankedRAM[0x2000]; // 0x20A001];    /* Banked RAM [2MiB] */
 uint8_t * const MemoryBankedRAM = _MemoryBankedRAM - 0xA000;
 
 #ifdef EMBEDROM
-const uint8_t MemoryROM[] = {
+const uint8_t MemoryROM[128*1024] = {
 #include EMBEDROM
 };
 #else
