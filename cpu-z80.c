@@ -3372,7 +3372,7 @@ inline int CpuExec(void) {
 
   PCBuffer = getMemoryBlock( Register.PC ) + Register.PC;
   cycles += OP[PCBuffer[0]]( PCBuffer, &Register );
-
+  
   return cycles;
 }
 

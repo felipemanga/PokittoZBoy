@@ -90,23 +90,27 @@ inline uint8_t GetFlagC(){ return Register.FC; } // ((Register.F & bx00010000) >
 
 inline void PushToStack(uint8_t TmpRegister1, uint8_t TmpRegister2) {    /* Push a register pair to the stack */
   Register.SP -= 1;  /* decrement SP to update the Stack Point address */
+  Register.SPBlock = getMemoryBlock( Register.SP );
   
   Register.SPBlock[ Register.SP ] = TmpRegister1;
   // MemoryWrite(Register.SP, TmpRegister1);        /* Write the byte */
   
   Register.SP -= 1;  /* decrement SP to update the Stack Point address */
+  // Register.SPBlock = getMemoryBlock( Register.SP );
   
   // MemoryWrite(Register.SP, TmpRegister2);        /* Write the byte */
   Register.SPBlock[ Register.SP ] = TmpRegister2;
 }
 
 inline void PopFromStack(uint8_t *popreg1, uint8_t *popreg2) {    /* Pop a register pair from the stack */
-  // *popreg2 = MemoryInternalHiRAM[ Register.SP ]; //
-  *popreg2 = MemoryRead(Register.SP);
+  *popreg2 = Register.SPBlock[ Register.SP ]; // MemoryRead(Register.SP);
   Register.SP++;
-  //*popreg1 = MemoryInternalHiRAM[ Register.SP ];
-  *popreg1 =  MemoryRead(Register.SP);
+  // Register.SPBlock = getMemoryBlock( Register.SP );
+
+  *popreg1 = Register.SPBlock[ Register.SP ]; // MemoryRead(Register.SP);
   Register.SP++;
+  Register.SPBlock = getMemoryBlock( Register.SP );
+  // *popreg1 =  MemoryRead(Register.SP);
 }
 
 inline void IncReg8(uint8_t *RegToInc) {
