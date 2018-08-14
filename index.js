@@ -1040,6 +1040,8 @@ function cancelEvent( event ){
     event.preventDefault();
 }
 
+let saveFile = new Uint8Array(0x6210);
+
 fetch('mbc0.bin?'+Math.random())
     .then( rsp => rsp.arrayBuffer() )
     .then( ab =>{
@@ -1215,6 +1217,9 @@ function dropFile( event ){
 	    }
 	}
 
+	let checksum = 0;
+	for( let i=0; i<ROM.length; ++i )
+	    checksum += ROM[i];
 	
 	let bin = new Uint8Array( mapper.bin.length );
 	bin.set( mapper.bin );
@@ -1227,13 +1232,22 @@ function dropFile( event ){
 	    bin.set( borderL, mapper.blOffset );
 	    bin.set( borderR, mapper.brOffset );
 	}
-	
-	let url = URL.createObjectURL( new Blob([bin.buffer], {type:'application/bin'}) );
-	let a = document.createElement('A');
-	a.href = url;
-	a.textContent = name;
-	a.setAttribute("download", name + ".bin");
-	log( a );
+
+	checksum = checksum.toString(16).toUpperCase().padStart(8,"0");
+
+	let z = new JSZip();
+	z.file(name + ".bin", bin);
+	z.file(checksum + ".SAV", saveFile);
+	z.generateAsync({type : "uint8array"})
+	    .then(function(arr){
+		
+		let url = URL.createObjectURL( new Blob([arr.buffer], {type:'application/bin'}) );
+		let a = document.createElement('A');
+		a.href = url;
+		a.textContent = name;
+		a.setAttribute("download", name + ".zip");
+		log( a );
+	    });
 	
     }
 
