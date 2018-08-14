@@ -4,20 +4,22 @@
 */
 
 void tableQsort(int *myarray, int LastEl) {
+    return;
+    
     int qstack[200];
     int i, j, first = 0, last, stackptr = 0;
     int temp, swaptmp;
 
-    /*first = Lbound(myarray) */
-    last  = LastEl; /*ubound(myarray) */
+    //*first = Lbound(myarray)
+    last  = LastEl; //*ubound(myarray)
     for (;;) {
         do {
-            temp = myarray[(last + first) >> 1]; /* >> 1 is the same than \ 2, but faster */
+            temp = myarray[(last + first) >> 1]; //* >> 1 is the same than \ 2, but faster 
             i = first;
             j = last;
             do {
-                while (myarray[i] > temp) i++; /* reverse both < and > here to */
-                while (myarray[j] < temp) j--; /* change the sorting order.    */
+                while (myarray[i] > temp) i++; //* reverse both < and > here to 
+                while (myarray[j] < temp) j--; //* change the sorting order.    
                 if (i > j) break;
                 if (i < j) {
                     swaptmp = myarray[i];

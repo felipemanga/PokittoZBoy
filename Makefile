@@ -85,7 +85,7 @@ OBJECTS += BUILD/PokittoLib/POKITTO_HW/clock_11u6x.o
 OBJECTS += BUILD/PokittoLib/POKITTO_HW/dma_11u6x.o
 OBJECTS += BUILD/PokittoLib/POKITTO_HW/iap.o
 OBJECTS += BUILD/PokittoLib/POKITTO_HW/timer_11u6x.o
-OBJECTS += BUILD/PokittoLib/POKITTO_LIBS/ImageFormat/BmpImage.o
+# OBJECTS += BUILD/PokittoLib/POKITTO_LIBS/ImageFormat/BmpImage.o
 OBJECTS += BUILD/PokittoLib/POKITTO_LIBS/Synth/Synth.o
 OBJECTS += BUILD/PokittoLib/POKITTO_LIBS/Synth/Synth_envfuncs.o
 OBJECTS += BUILD/PokittoLib/POKITTO_LIBS/Synth/Synth_helpers.o
@@ -149,7 +149,6 @@ OBJECTS += BUILD/PokittoLib/mbed-pokitto/targets/hal/TARGET_NXP/TARGET_LPC11U6X/
 OBJECTS += BUILD/PokittoLib/mbed-pokitto/targets/hal/TARGET_NXP/TARGET_LPC11U6X/spi_api.o
 OBJECTS += BUILD/PokittoLib/mbed-pokitto/targets/hal/TARGET_NXP/TARGET_LPC11U6X/us_ticker.o
 OBJECTS += BUILD/main.o
-
 OBJECTS += BUILD/zboy.o 
 OBJECTS += BUILD/drv_pok.o 
 OBJECTS += BUILD/loadpal.o 
@@ -195,10 +194,10 @@ LINKER_SCRIPT ?= ./PokittoLib/mbed-pokitto/targets/cmsis/TARGET_NXP/TARGET_LPC11
 ###############################################################################
 # Tools and Flags
 
-AS      = 'arm-none-eabi-gcc' '-x' 'assembler-with-cpp' '-c' '-Wall' '-Wextra' '-Wno-unused-parameter' '-Wno-missing-field-initializers' '-fmessage-length=0' '-fno-exceptions' '-fno-builtin' '-ffunction-sections' '-fdata-sections' '-funsigned-char' '-MMD' '-fno-delete-null-pointer-checks' '-fomit-frame-pointer' '-O3' '-g1' '-DMBED_RTOS_SINGLE_THREAD' '-mcpu=cortex-m0plus' '-mthumb'
-CC      = 'arm-none-eabi-gcc' '-std=gnu89' '-c' '-Wall' '-Wextra' '-Wno-unused-parameter' '-Wno-missing-field-initializers' '-fmessage-length=0' '-fno-exceptions' '-fno-builtin' '-ffunction-sections' '-fdata-sections' '-funsigned-char' '-MMD' '-fno-delete-null-pointer-checks' '-fomit-frame-pointer' '-O3' '-g1' '-DMBED_RTOS_SINGLE_THREAD' '-mcpu=cortex-m0plus' '-mthumb'
-CPP     = 'arm-none-eabi-g++' '-std=gnu++98' '-fno-rtti' '-Wvla' '-c' '-Wall' '-Wextra' '-Wno-unused-parameter' '-Wno-missing-field-initializers' '-fmessage-length=0' '-fno-exceptions' '-fno-builtin' '-ffunction-sections' '-fdata-sections' '-funsigned-char' '-MMD' '-fno-delete-null-pointer-checks' '-fomit-frame-pointer' '-O3' '-g1' '-DMBED_RTOS_SINGLE_THREAD' '-mcpu=cortex-m0plus' '-mthumb'
-LD      = 'arm-none-eabi-gcc'
+AS      = 'cdb' 'arm-none-eabi-gcc' '-x' 'assembler-with-cpp' '-c' '-Wall' '-Wextra' '-Wno-unused-parameter' '-Wno-missing-field-initializers' '-fmessage-length=0' '-fno-exceptions' '-fno-builtin' '-ffunction-sections' '-fdata-sections' '-funsigned-char' '-MMD' '-fno-delete-null-pointer-checks' '-fomit-frame-pointer' '-O3' '-g1' '-DMBED_RTOS_SINGLE_THREAD' '-mcpu=cortex-m0plus' '-mthumb'
+CC      = 'cdb' 'arm-none-eabi-gcc' '-std=gnu89' '-c' '-Wall' '-Wextra' '-Wno-unused-parameter' '-Wno-missing-field-initializers' '-fmessage-length=0' '-fno-exceptions' '-fno-builtin' '-ffunction-sections' '-fdata-sections' '-funsigned-char' '-MMD' '-fno-delete-null-pointer-checks' '-fomit-frame-pointer' '-O3' '-g1' '-DMBED_RTOS_SINGLE_THREAD' '-mcpu=cortex-m0plus' '-mthumb'
+CPP     = 'cdb' 'arm-none-eabi-g++' '-std=gnu++98' '-fno-rtti' '-Wvla' '-c' '-Wall' '-Wextra' '-Wno-unused-parameter' '-Wno-missing-field-initializers' '-fmessage-length=0' '-fno-exceptions' '-fno-builtin' '-ffunction-sections' '-fdata-sections' '-funsigned-char' '-MMD' '-fno-delete-null-pointer-checks' '-fomit-frame-pointer' '-O3' '-g1' '-DMBED_RTOS_SINGLE_THREAD' '-mcpu=cortex-m0plus' '-mthumb'
+LD      = 'cdb' 'arm-none-eabi-gcc'
 ELF2BIN = 'arm-none-eabi-objcopy'
 PREPROC = 'arm-none-eabi-cpp' '-E' '-P' '-Wl,--gc-sections' '-Wl,--wrap,main' '-Wl,--wrap,_malloc_r' '-Wl,--wrap,_free_r' '-Wl,--wrap,_realloc_r' '-Wl,--wrap,_memalign_r' '-Wl,--wrap,_calloc_r' '-Wl,--wrap,exit' '-Wl,--wrap,atexit' '-Wl,-n' '--specs=nano.specs' '-mcpu=cortex-m0plus' '-mthumb'
 
@@ -234,11 +233,13 @@ C_FLAGS += -DDEVICE_SPI=1
 C_FLAGS += -DDEVICE_ANALOGIN=1
 C_FLAGS += -DDEVICE_PWMOUT=1
 C_FLAGS += -DTARGET_LIKE_CORTEX_M0
-C_FLAGS += -include
-C_FLAGS += mbed_config.h
-C_FLAGS += '-DEMBEDROM="tetris.c"'
-
-CXX_FLAGS += -std=gnu++98
+#C_FLAGS += -include
+#C_FLAGS += mbed_config.h
+#C_FLAGS += '-DEMBEDROM="tank.c"'
+C_FLAGS += '-DMBC0'
+C_FLAGS += '-DSCALING'
+CXX_FLAGS += '-DSCALING'
+CXX_FLAGS += -std=gnu++14
 CXX_FLAGS += -fno-rtti
 CXX_FLAGS += -Wvla
 CXX_FLAGS += -DTARGET_LPC11U68
@@ -271,8 +272,8 @@ CXX_FLAGS += -DDEVICE_SPI=1
 CXX_FLAGS += -DDEVICE_ANALOGIN=1
 CXX_FLAGS += -DDEVICE_PWMOUT=1
 CXX_FLAGS += -DTARGET_LIKE_CORTEX_M0
-CXX_FLAGS += -include
-CXX_FLAGS += mbed_config.h
+#CXX_FLAGS += -include
+#CXX_FLAGS += mbed_config.h
 
 ASM_FLAGS += -x
 ASM_FLAGS += assembler-with-cpp
@@ -308,7 +309,7 @@ ASM_FLAGS += -I./PokittoLib/mbed-pokitto/targets/hal/TARGET_NXP
 ASM_FLAGS += -I./PokittoLib/mbed-pokitto/targets/hal/TARGET_NXP/TARGET_LPC11U6X
 
 
-LD_FLAGS :=-Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_memalign_r -Wl,-n --specs=nano.specs -mcpu=cortex-m0plus -mthumb 
+LD_FLAGS :=-Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,free -Wl,--wrap,_memalign_r -Wl,-n --specs=nano.specs -mcpu=cortex-m0plus -mthumb 
 LD_SYS_LIBS :=-Wl,--start-group -lstdc++ -lsupc++ -lm -lc -lgcc -lnosys  -Wl,--end-group
 
 # Tools and Flags

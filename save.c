@@ -93,9 +93,11 @@ void LoadGame(void) {
     fileReadBytes( &VideoClkCounterVBlank, sizeof(VideoClkCounterVBlank) );
 
     CurLY = fileGetChar();
-    LastLYdraw = 0; // filePutChar();
+    LastLYdraw = fileGetChar();
     CurRamBank = fileGetChar();
     CurRomBank = fileGetChar();
+    JoyRegA = fileGetChar();
+    JoyRegB = fileGetChar();
   
     fileReadBytes( _MemoryInternalRAM, sizeof(_MemoryInternalRAM) );
     fileReadBytes( _MemoryInternalHiRAM, sizeof(_MemoryInternalHiRAM) );
@@ -105,8 +107,16 @@ void LoadGame(void) {
     fileReadBytes( _IoRegisters, sizeof(_IoRegisters) );
     fileReadBytes( RAMette, sizeof(RAMette) );
 
+    char check[12];
+    check[11] = 0;
+    fileReadBytes( check, 11 );
+
     fileClose();
-    SetUserMsg("GAME LOADED");
+    Register.SPBlock = getMemoryBlock( Register.SP );
+    if( strcmp( check, "END-OF-FILE" ) ){
+	check[11] = 0;
+	SetUserMsg( check );
+    }
 }
 
 void SaveGame(void) {
@@ -137,6 +147,8 @@ void SaveGame(void) {
   filePutChar(LastLYdraw);
   filePutChar(CurRamBank);
   filePutChar(CurRomBank);
+  filePutChar(JoyRegA);
+  filePutChar(JoyRegB);
   
   fileWriteBytes( _MemoryInternalRAM, sizeof(_MemoryInternalRAM) );
   fileWriteBytes( _MemoryInternalHiRAM, sizeof(_MemoryInternalHiRAM) );
@@ -159,7 +171,8 @@ void SaveGame(void) {
   /* filePutChar(0); /\* write a dummy byte *\/ */
   /* /\*filePutChar(BootRomEnabledFlag);*\/ */
   /* filePutChar(0); /\* write a dummy byte *\/ */
-  
+
+  fileWriteBytes("END-OF-FILE", 11);
   fileClose();
   SetUserMsg("GAME SAVED");
 
