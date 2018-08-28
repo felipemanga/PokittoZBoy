@@ -5,7 +5,8 @@ let borderL = new Uint8Array( 30*(176-16-16) );
 let borderR = new Uint8Array( 30*(176-16-16) );
 
 let borders = 
-` black.png
+` jonne-dmws.png
+  black.png
   jonne-castlevania-ii.png
   jonne-prince_of_persia.png
   abugs.png
@@ -822,6 +823,13 @@ let pal8 = new Uint8Array(pal.buffer);
 
 let mappers = {};
 let palettes = {
+    "@Jonne - Greenscale":[
+        "#1d3a0e", "#405c23", "#aad52b", "#f9f571",
+        "#1d3a0e", "#405c23", "#aad52b", "#f9f571",
+        "#1d3a0e", "#405c23", "#aad52b", "#f9f571",
+        "#1d3a0e", "#405c23", "#aad52b", "#f9f571"
+    ],
+
     "GBC Up":[
 	"#000000", "#833100", "#FFAD63", "#FFFFFF",
 	"#000000", "#833100", "#F7C4A5", "#FFFFFF",
@@ -841,7 +849,7 @@ let palettes = {
 	"#000000", "#6B5331", "#A58451", "#FFFFFF",
 	"#000000", "#833100", "#FFAD63", "#FFFFFF",
 	"#000000", "#833100", "#FFAD63", "#FFFFFF"
-    ],
+	],
 
     "@Jonne - Prince Of Persia":[
 	"#000000", "#aa8484", "#535764", "#fff897",
@@ -895,8 +903,13 @@ let palettes = {
 	"#000000", "#0072d6", "#1f9dff", "#fffaca",
 	"#29003c", "#6000ba", "#ac53ff", "#ffffff",
 	"#005189", "#227fc0", "#73c6ff", "#ffffff"
+    ],
+    "@FManga - Bomb Jack":[
+	"#000000", "#bb8a50", "#eacc7b", "#bcecf3",
+	"#000000", "#e60000", "#ff8584", "#ffffff",
+	"#ea2020", "#2842c1", "#f2dc99", "#ffffff",
+	"#3f6d00", "#cbe81f", "#fdff9e", "#ffffff"
     ]
-
 };
 
 let map = [
@@ -922,6 +935,8 @@ document.addEventListener("DOMContentLoaded", function(){
     }
     pc.onchange = _ => loadPalette( palettes[ pc.value ] );
 
+    loadPalette( palettes[ Object.keys(palettes)[0] ] );
+
     [...document.querySelectorAll("input[type=color]")]
 	.forEach( el => el.onchange = _ => exp.style.display = "inline" );
 
@@ -933,6 +948,8 @@ document.addEventListener("DOMContentLoaded", function(){
     });
 
     bs.onchange = changeBorder;
+    bs.value = borders[0];
+    bs.dispatchEvent(new Event("change"));
 
     exp.onclick = _ => {
 	
@@ -1181,7 +1198,7 @@ function dropFile( event ){
     function process( ROM, name ){
 
 	let mapperId = ROM[0x147];
-	if( mapperId == 6 ) mapperId = 1;
+	if( mapperId == 6 || mapperId == 3 ) mapperId = 1;
 
 	let mapper = mappers[ (hasBorder?'b':'s') + mapperId ];
 	
