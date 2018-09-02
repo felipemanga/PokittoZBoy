@@ -99,6 +99,19 @@
       display: none;
       }
 
+      #mobtxt {
+      display: none;
+      }
+
+      @media (pointer:none), (pointer:coarse) {
+      #mobtxt{
+      display: block !important;
+      }
+      #pctxt{
+      display: none;
+      }
+      }
+
     </style>
     <script src="jszip.min.js"></script>
     <script src="index.js"></script>
@@ -108,7 +121,8 @@
     <div id=boxContainer>
       <div id=box>
 	<h1>PokittoZBoy</h1>
-	<p>Drop gameboy ROM<br/>(.gb or .zip)</br>HERE!</p>
+	<p id=pctxt>Drop gameboy ROM<br/>(.gb or .zip)</br>HERE!</p>
+	<p id=mobtxt><input type="file" id=mobfile accept=".gb,.zip" multiple="multiple">Select GB or ZIP</p>
 	<p id=credits>
 	  <a href="http://zboy.sourceforge.net/" class=lightlink>Original</a> zBoy emulator by Mateusz Viste<br/>
 	  Port and optimization by Felipe Manga<br/>

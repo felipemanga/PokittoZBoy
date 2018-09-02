@@ -923,7 +923,7 @@ document.addEventListener("DOMContentLoaded", function(){
     document.body.addEventListener("dragenter", cancelEvent);
     document.body.addEventListener("dragover", cancelEvent);
     document.body.addEventListener("drop", dropFile);
-
+    document.getElementById("mobfile").onchange = openFile;
     let exp = document.getElementById("export");
     let bs = document.getElementById("border");
     let pc = document.getElementById("colors");
@@ -1112,19 +1112,31 @@ function color( str ){
     return ((r<<11) | (g<<5) | b) << 3;
 }
 
-function dropFile( event ){
-    cancelEvent( event );
-	
-    var dt = event.dataTransfer;
-    var files = dt.files;
-    var out = [];
-    var pendingPal = 1;
-    var pending = 0;
+function preconvert(){
 
     for( let i=0; i<16; ++i ){
 	let inp = document.getElementById("c" + i);
 	pal[i] = color(inp.value.substr(1));
     }
+    
+}
+
+function dropFile( event ){
+    cancelEvent( event );	
+    preconvert();
+    convert( event.dataTransfer.files );
+}
+
+function openFile( event ){
+    preconvert();
+    convert( mobfile.files );
+}
+
+function convert( files ){
+
+    var out = [];
+    var pendingPal = 1;
+    var pending = 0;
 
     for (var i = 0; i < files.length; i++) {
 	let file = files[i];
